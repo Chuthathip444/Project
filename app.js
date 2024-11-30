@@ -9,6 +9,7 @@ const saltRounds = 10;
 var jwt = require('jsonwebtoken');
 const secret = 'login'
 const multer = require('multer');
+const moment = require('moment-timezone');
 require('dotenv').config()
 
 app.use(cors())
@@ -82,6 +83,21 @@ app.post('/authen', jsonParser, function (req, res, next) {
     }
 })
 
+// ดูข้อมูลในตาราง admin ทั้งหมด
+app.get('/Alladmin', function (req, res, next) {
+    connection.query(
+        'SELECT id, email, fname, lname FROM admin', 
+        function (err, results, fields) {
+            if (err) {
+                res.json({ status: 'error', message: err }); 
+                return;
+            }
+            res.json({ status: 'ok', AllAdmin: results }); 
+        }
+    );
+});
+
+// ฐานข้อมูล newresearch สำหรับการอัพเดตวิจัยใหม่
 // เก็บ image
 const storage = multer.diskStorage({
     destination: function(req, file, cb) {
@@ -90,23 +106,19 @@ const storage = multer.diskStorage({
     filename: function (req, file, cb) {
       return cb(null, `${Date.now()}_${file.originalname}`)
     }
-  })
-   
+})
 const upload = multer({storage})
 
-// ฐานข้อมูล newreserch สำหรับการอัพเดตวิจัยใหม่
-
-// Create (Add new reserch)
-app.post('/reserch', upload.array('files', 10), (req, res) => {
+// Create (Add new research)
+app.post('/research', upload.array('files', 10), (req, res) => {
     const name = req.body.name;
     const title = req.body.title;
     const images = req.files.map(file => file.filename); // เก็บชื่อไฟล์ทั้งหมดใน array
-    const currentTime = new Date().toISOString().slice(0, 19).replace('T', ' '); 
-    // เวลาปัจจุบันในรูปแบบฐานข้อมูล MySQL
+    const currentTime = moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
 
     connection.execute(
-        'INSERT INTO newreserch (name, title, image) VALUES (?, ?, ?)',
-        [name, title, JSON.stringify(images)], // เก็บ array ของชื่อไฟล์เป็น JSON string ในฐานข้อมูล
+        'INSERT INTO newresearch (name, title, image, time) VALUES (?, ?, ?, ?)', 
+        [name, title, JSON.stringify(images), currentTime], 
         function (err, results, fields) {
             if (err) {
                 res.json({ status: 'error', message: err });
@@ -121,13 +133,12 @@ app.post('/reserch', upload.array('files', 10), (req, res) => {
             });
         }
     );
-}); 
+});
 
-
-// Read (Get all reserch)
-app.get('/Allreserch', function (req, res, next) {
+// Read (Get all research)
+app.get('/Allresearch', function (req, res, next) {
     connection.query(
-        'SELECT id, name, title, image, time FROM newreserch',
+        'SELECT id, name, title, image, time FROM newresearch',
         function (err, results, fields) {
             if (err) {
                 res.json({ status: 'error', message: err });
@@ -139,10 +150,10 @@ app.get('/Allreserch', function (req, res, next) {
 });
 
 
-// Read (Get reserch by ID)
-app.get('/reserch/:id', function (req, res, next) {
+// Read (Get research by ID)
+app.get('/research/:id', function (req, res, next) {
     connection.execute(
-        'SELECT * FROM newreserch WHERE id=?',
+        'SELECT * FROM newresearch WHERE id=?',
         [req.params.id],
         function (err, results, fields) {
             if (err) {
@@ -150,7 +161,7 @@ app.get('/reserch/:id', function (req, res, next) {
                 return;
             }
             if (results.length === 0) {
-                res.json({ status: 'error', message: 'Reserch not found' });
+                res.json({ status: 'error', message: 'Research not found' });
                 return;
             }
             res.json({ status: 'ok', reserch: results[0] });
@@ -158,8 +169,8 @@ app.get('/reserch/:id', function (req, res, next) {
     );
 });
 
-// Update (Edit reserch)
-app.put('/reserch/:id', upload.array('files', 10), function (req, res, next) {
+// Update (Edit research)
+app.put('/research/:id', upload.array('files', 10), function (req, res, next) {
     const name = req.body.name || null; // ใช้ค่า null ถ้าไม่มีค่า
     const title = req.body.title || null;
 
@@ -177,7 +188,7 @@ app.put('/reserch/:id', upload.array('files', 10), function (req, res, next) {
     }
 
     connection.execute(
-        'UPDATE newreserch SET name=?, title=?, image=? WHERE id=?',
+        'UPDATE newresearch SET name=?, title=?, image=? WHERE id=?',
         [name, title, images, req.params.id],
         function (err, results, fields) {
             if (err) {
@@ -190,22 +201,24 @@ app.put('/reserch/:id', upload.array('files', 10), function (req, res, next) {
 });
 
 
-// Delete (Remove reserch)
-app.delete('/reserch/:id', function (req, res, next) {
+// Delete (Remove research)
+app.delete('/research/:id', function (req, res, next) {
     connection.execute(
-        'DELETE FROM newreserch WHERE id=?',
+        'DELETE FROM newresearch WHERE id=?',
         [req.params.id],
         function (err, results, fields) {
             if (err) {
                 res.json({ status: 'error', message: err });
                 return;
             }
-            res.json({ status: 'ok', message: 'Reserch deleted successfully' });
+            res.json({ status: 'ok', message: 'Research deleted successfully' });
         }
     );
 });
 
-// run port 3333
-app.listen(3333, function () {
-    console.log('CORS-enabled web server listening on port 3333')
-})
+const { createServer } = require('http');
+const port = 3333;
+const server = createServer(app);  // สร้าง HTTP server จาก app
+server.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});

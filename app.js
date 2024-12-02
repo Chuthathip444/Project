@@ -1,6 +1,6 @@
 var express = require('express')
 var cors = require('cors')
-const mysql = require('mysql2');
+//const mysql = require('mysql2');
 var app = express()
 var bodyParser = require('body-parser')
 var jsonParser = bodyParser.json()
@@ -11,18 +11,9 @@ const secret = 'login'
 const multer = require('multer');
 const moment = require('moment-timezone');
 require('dotenv').config()
+const connection = require('./config/db'); // เรียกใช้การเชื่อมต่อจากconfig/db.js
 
 app.use(cors())
-
-// เชื่อมต่อฐานข้อมูล mydb มีหลายตารางในฐานข้อมูล
-const connection = mysql.createConnection(process.env.DATABASE_URL)
-
-//const connection = mysql.createConnection({
-    //host: 'localhost',
-    //user: 'root',
-    //database: 'mydb',
-//});
-
 
 // register ทำไว้เพื่อข้อมูล admin คนใหม่เข้าระบบ
 app.post('/register', jsonParser, function (req, res, next) {

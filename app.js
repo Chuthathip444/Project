@@ -14,6 +14,10 @@ require('dotenv').config();
 
 app.use(cors());
 
+app.get('/', function(req, res) {
+    res.send('Web Application for Research');
+  });
+
 // register ทำไว้เพื่อข้อมูล admin คนใหม่เข้าระบบ
 app.post('/register', jsonParser, async function (req, res, next) {
   try {

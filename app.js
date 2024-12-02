@@ -13,7 +13,14 @@ const moment = require('moment-timezone');
 require('dotenv').config()
 const connection = require('./config/db'); // เรียกใช้การเชื่อมต่อจากconfig/db.js
 
-app.use(cors())
+const corsConfig = {
+    origin: '*',
+    credential: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  };
+app.options('*', cors(corsConfig));
+app.use(cors(corsConfig));
+//app.use(cors())
 
 // register ทำไว้เพื่อข้อมูล admin คนใหม่เข้าระบบ
 app.post('/register', jsonParser, function (req, res, next) {

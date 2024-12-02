@@ -1,15 +1,26 @@
-const mysql = require('mysql2');
-require('dotenv').config(); 
+const mysql = require('mysql2/promise');
+require('dotenv').config();
 
-const connection = mysql.createConnection(process.env.DATABASE_URL);
+let pool;
 
-// ตรวจสอบการเชื่อมต่อ
-connection.connect((err) => {
-    if (err) {
-        console.error('Database connection failed:', err.stack);
-        return;
-    }
-    console.log('Connected to database.');
-});
+(async () => {
+  try {
+    pool = mysql.createPool({
+      host: 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com', 
+      user: 'jthBBZwkYtCL4RN.root', 
+      password: 'MJPgExL9zgd1mfsL',
+      database: 'mydb', 
+      port: 4000, 
+      ssl: {
+        rejectUnauthorized: true, 
+      },
+    });
 
-module.exports = connection;
+    console.log('✅Connected database');
+  } catch (error) {
+    console.error('❌Failed ', error.message);
+    process.exit(1); 
+  }
+})();
+
+module.exports = pool;

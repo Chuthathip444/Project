@@ -7,7 +7,7 @@ const pool = require('../config/db');
 require('dotenv').config();
 
 router.get('/', (req, res) => {
-    res.send('หน้าโพสข้อมูลใหม่');
+    res.send('หน้าโพสงานวิจัยใหม่');
   });
 
 // การจัดการไฟล์ภาพ

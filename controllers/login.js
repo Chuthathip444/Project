@@ -8,6 +8,10 @@ const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 const saltRounds = 10; 
 
+router.get('/', (req, res) => {
+  res.send('หน้า Login');
+});
+
 // Register: เพิ่มข้อมูล admin ใหม่
 router.post('/register', jsonParser, async function (req, res) {
   try {

@@ -22,7 +22,7 @@ const researchController = require('./controllers/newresearch');
 // Use controllers API
 app.use('/', homeController); 
 app.use('/api', loginController); 
-app.use('/api', researchController); 
+app.use('/page', researchController); 
 
 const { createServer } = require('http');
 const port = 3333;

@@ -6,6 +6,10 @@ const router = express.Router();
 const pool = require('../config/db');
 require('dotenv').config();
 
+router.get('/', (req, res) => {
+    res.send('หน้าโพสข้อมูลใหม่');
+  });
+
 // การจัดการไฟล์ภาพ
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {

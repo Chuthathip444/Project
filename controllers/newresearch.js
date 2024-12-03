@@ -104,7 +104,7 @@ router.put('/research/:id', upload.array('files', 10), async function (req, res,
       }
     });
     
-// Delete (Remove research)
+// Delete research
 router.delete('/research/:id', async function (req, res, next) {
       try {
         await pool.execute(

@@ -18,11 +18,15 @@ app.use(cors());
 const homeController = require('./controllers/home');
 const loginController = require('./controllers/login');
 const researchController = require('./controllers/newresearch');
+const ebookController = require('./controllers/ebook');
+const researcherController = require('./controllers/researcher');
 
 // Use controllers API
 app.use('/', homeController); 
 app.use('/api', loginController); 
-app.use('/page', researchController); 
+app.use('/post', researchController); 
+app.use('/ebook', ebookController);
+app.use('/researcher', researcherController);
 
 const { createServer } = require('http');
 const port = 3333;

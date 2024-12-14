@@ -17,16 +17,19 @@ app.use(cors());
 // Import controllers
 const homeController = require('./controllers/home');
 const loginController = require('./controllers/login');
-const researchController = require('./controllers/newresearch');
+//const researchController = require('./controllers/newresearch');
 const ebookController = require('./controllers/ebook');
 const researcherController = require('./controllers/researcher');
+const activityController = require('./controllers/activity');
 
-// Use controllers API
+
+// API
 app.use('/', homeController); 
-app.use('/api', loginController); 
-app.use('/post', researchController); 
+app.use('/Login', loginController); 
+//app.use('/post', researchController); 
 app.use('/ebook', ebookController);
 app.use('/researcher', researcherController);
+app.use('/activity', activityController);
 
 const { createServer } = require('http');
 const port = 3333;

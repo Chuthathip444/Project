@@ -13,7 +13,9 @@ require('dotenv').config();
 router.get('/', async (req, res) => {
   try {
     const [results] = await pool.execute(
-      `SELECT id AS researcher_id, name AS researcher_name
+      `SELECT id AS id, name AS name, name_thai AS name_thai,
+       department AS department, faculty AS faculty, contact AS contact,
+       phone AS phone, office AS office
        FROM researcher`
     );
     res.json({

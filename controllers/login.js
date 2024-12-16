@@ -8,9 +8,9 @@ const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 const saltRounds = 10; 
 
-router.get('/', (req, res) => {
-  res.send('หน้า Login');
-});
+// router.get('/', (req, res) => {
+//   res.send('หน้า Login');
+// });
 
 // Register: เพิ่มข้อมูล admin ใหม่
 router.post('/register', jsonParser, async function (req, res) {
@@ -27,7 +27,7 @@ router.post('/register', jsonParser, async function (req, res) {
 });
 
 // Login: สำหรับ admin
-router.post('/login', jsonParser, async function (req, res) {
+router.post('/', jsonParser, async function (req, res) {
   try {
     const [user] = await pool.execute('SELECT * FROM admin WHERE email=?', [req.body.email]);
     if (user.length === 0) {

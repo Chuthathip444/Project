@@ -25,7 +25,7 @@ const activityController = require('./controllers/activity');
 
 // API
 app.use('/', homeController); 
-app.use('/Login', loginController); 
+app.use('/login', loginController); 
 //app.use('/post', researchController); 
 app.use('/ebook', ebookController);
 app.use('/researcher', researcherController);

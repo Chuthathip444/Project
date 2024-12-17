@@ -51,8 +51,38 @@ router.get('/scopus', async (req, res) => {
   }
 });
 
+//แยกภาควิชา มี4ภาค 
+router.get('/:department', async (req, res) => {
+  const department = req.params.department; // รับ department จาก URL
+  try {
+    const [data] = await pool.execute(
+      `SELECT 
+    r.id AS id, 
+    r.name AS name, 
+    r.name_thai AS name_thai,
+    r.department AS department,
+    r.faculty AS faculty,
+    r.contact AS contact,
+    r.phone AS phone,
+    r.office AS office
+    FROM researcher r
+    WHERE r.department = ?`, // ค้นหาจาก department
+      [department]
+    );
+    res.json({
+      status: 'ok',
+      data: data,
+    });
+  } catch (err) {
+    res.json({
+      status: 'error',
+      message: err.message,
+    });
+  }
+});
+
 //แสดงข้อมูลนักวิจัยแต่ละคนด้วย id ว่ามีกี่วิจัย
-router.get('/:id', async (req, res) => {
+router.get('/:department/:id', async (req, res) => {
   const researcherId = req.params.id; 
   try {
     const [results] = await pool.execute(
@@ -61,7 +91,7 @@ router.get('/:id', async (req, res) => {
        FROM researcher r
        LEFT JOIN scopus_2019_2023 s ON r.id = s.researcher_id
        WHERE r.id = ?`, // Filter by researcher id
-      [researcherId] 
+      [researcherId]     
     );
     res.json({
       status: 'ok',
@@ -76,5 +106,5 @@ router.get('/:id', async (req, res) => {
 });
 
 
-
 module.exports = router;
+

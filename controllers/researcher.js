@@ -107,7 +107,7 @@ router.get('/:department/:id', async (req, res) => {
   }
 });
 
-//เก็บรูปอาจารย์
+//เก็บรูปนักวิจัย
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
       return cb(null, './public/profile');
@@ -131,6 +131,7 @@ const image = req.file ? req.file.filename : null;
     );
     res.json({
       status: 'ok',
+      message: 'Researcher added successfully',
       researcherId: result.insertId,
       image: image,
     });
@@ -141,6 +142,32 @@ const image = req.file ? req.file.filename : null;
     });
   }
 });
+
+//เพิ่ม อัพเดต แค่รูปนักวิจัย
+router.put('/update/:id', upload.single('image'), async (req, res) => {
+  const researcherId = req.params.id; // รับค่า id จาก URL
+  const image = req.file ? req.file.filename : null;
+  try {
+    const [result] = await pool.execute(
+      `UPDATE researcher 
+       SET image = ? 
+       WHERE id = ?`,
+      [image, researcherId]
+    );
+    res.json({
+      status: 'ok',
+      message: 'Image updated successfully',
+      researcherId: researcherId, 
+      image: image,
+    });
+  } catch (err) {
+    res.json({
+      status: 'error',
+      message: err.message,
+    });
+  }
+});
+
 
 //ลบนักวิจัย
 router.delete('/:id', async function (req, res, next) {

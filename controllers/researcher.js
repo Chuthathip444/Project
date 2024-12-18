@@ -4,6 +4,7 @@ var cors = require('cors');
 const moment = require('moment-timezone');
 const pool = require('../config/db');
 require('dotenv').config();
+const multer = require('multer');
 
 // router.get('/', (req, res) => {
 //   res.send('หน้าโปรไฟล์นักวิจัย/อาจารย์ แต่ละภาควิชา');
@@ -15,7 +16,7 @@ router.get('/', async (req, res) => {
     const [results] = await pool.execute(
       `SELECT id AS id, name AS name, name_thai AS name_thai,
        department AS department, faculty AS faculty, contact AS contact,
-       phone AS phone, office AS office
+       phone AS phone, office AS office ,image AS image
        FROM researcher`
     );
     res.json({
@@ -64,7 +65,8 @@ router.get('/:department', async (req, res) => {
     r.faculty AS faculty,
     r.contact AS contact,
     r.phone AS phone,
-    r.office AS office
+    r.office AS office,
+    r.image AS image
     FROM researcher r
     WHERE r.department = ?`, // ค้นหาจาก department
       [department]
@@ -104,6 +106,55 @@ router.get('/:department/:id', async (req, res) => {
     });
   }
 });
+
+//เก็บรูปอาจารย์
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      return cb(null, './public/profile');
+    },
+    filename: function (req, file, cb) {
+      return cb(null, `${Date.now()}_${file.originalname}`);
+    },
+  });
+
+const upload = multer({ storage });
+
+//เพิ่มนักวิจัยคนใหม่
+router.post('/new', upload.single('image'), async (req, res) => {
+const { name, name_thai, department, faculty, contact, phone, office } = req.body;
+const image = req.file ? req.file.filename : null; 
+  try {
+    const [result] = await pool.execute(
+      `INSERT INTO researcher (name, name_thai, department, faculty, contact, phone, office, image) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [name, name_thai, department, faculty, contact, phone, office, image]
+    );
+    res.json({
+      status: 'ok',
+      researcherId: result.insertId,
+      image: image,
+    });
+  } catch (err) {
+    res.json({
+      status: 'error',
+      message: err.message,
+    });
+  }
+});
+
+//ลบนักวิจัย
+router.delete('/:id', async function (req, res, next) {
+  try {
+      const [results] = await pool.execute(
+          'DELETE FROM researcher WHERE id = ?',
+          [req.params.id]
+      );
+      res.json({ status: 'ok', message: 'Researcher deleted successfully' });
+  } catch (err) {
+      res.json({ status: 'error', message: err.message });
+  }
+});
+
 
 
 module.exports = router;

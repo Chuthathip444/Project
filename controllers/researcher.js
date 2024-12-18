@@ -37,7 +37,7 @@ router.get('/scopus', async (req, res) => {
       `SELECT r.id AS researcher_id, r.name AS researcher_name, 
               s.id AS scopus_id, s.paper, s.year, s.source, s.cited, s.link_to_paper
        FROM researcher r
-       LEFT JOIN scopus_2019_2023 s ON r.id = s.researcher_id`
+       LEFT JOIN scopus s ON r.id = s.researcher_id`
     );
     res.json({
       status: 'ok',
@@ -89,7 +89,7 @@ router.get('/:department/:id', async (req, res) => {
       `SELECT r.id AS researcher_id, r.name AS researcher_name, 
               s.id AS scopus_id, s.paper, s.year, s.source, s.cited, s.link_to_paper
        FROM researcher r
-       LEFT JOIN scopus_2019_2023 s ON r.id = s.researcher_id
+       LEFT JOIN scopus s ON r.id = s.researcher_id
        WHERE r.id = ?`, // Filter by researcher id
       [researcherId]     
     );

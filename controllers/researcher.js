@@ -5,10 +5,12 @@ const moment = require('moment-timezone');
 const pool = require('../config/db');
 require('dotenv').config();
 const multer = require('multer');
+const bodyParser = require('body-parser');
+const app = express();
 
-// router.get('/', (req, res) => {
-//   res.send('หน้าโปรไฟล์นักวิจัย/อาจารย์ แต่ละภาควิชา');
-// });
+app.use(bodyParser.json());  // สำหรับ JSON
+app.use(bodyParser.urlencoded({ extended: true }));  
+
 
 //แสดงข้อมูลตาราง researcher
 router.get('/', async (req, res) => {
@@ -120,7 +122,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 //เพิ่มนักวิจัยคนใหม่
-router.post('/new', upload.single('image'), async (req, res) => {
+router.post('/:department/new', upload.single('image'), async (req, res) => {
 const { name, name_thai, department, faculty, contact, phone, office } = req.body;
 const image = req.file ? req.file.filename : null; 
   try {
@@ -131,7 +133,7 @@ const image = req.file ? req.file.filename : null;
     );
     res.json({
       status: 'ok',
-      message: 'Researcher added successfully',
+      message: 'Researcher add',
       researcherId: result.insertId,
       image: image,
     });
@@ -143,9 +145,78 @@ const image = req.file ? req.file.filename : null;
   }
 });
 
+//อัพเดต แก้ไข โปรไฟล์นักวิจัย
+router.put('/:department/update/:id', upload.single('image'), async (req, res) => {
+  const researcherId = req.params.id; 
+  const { name, name_thai, department, faculty, contact, phone, office } = req.body;
+  const image = req.file ? req.file.filename : null; 
+  try {
+    // ดึงข้อมูลปัจจุบันของ researcher จากฐานข้อมูล
+    const [existingData] = await pool.execute(
+      `SELECT * FROM researcher WHERE id = ?`,
+      [researcherId]
+    );
+    if (existingData.length === 0) {
+      return res.json({
+        status: 'error',
+        message: 'Researcher not found',
+      });
+    }
+  const currentData = existingData[0]; // ข้อมูลปัจจุบันของ researcher
+
+  // รวมข้อมูลใหม่กับข้อมูลเดิม (ถ้าข้อมูลใหม่ไม่มีการส่งมา)
+  const updatedData = {
+    name: name || currentData.name,
+    name_thai: name_thai || currentData.name_thai,
+    department: department || currentData.department,
+    faculty: faculty || currentData.faculty,
+    contact: contact || currentData.contact,
+    phone: phone || currentData.phone,
+    office: office || currentData.office,
+    image: image || currentData.image,
+  };
+
+  // อัปเดตข้อมูลลงในฐานข้อมูล
+    const [result] = await pool.execute(
+      `UPDATE researcher 
+       SET name = ?, name_thai = ?, department = ?, faculty = ?, 
+           contact = ?, phone = ?, office = ?, image = ?
+       WHERE id = ?`,
+      [
+        updatedData.name,
+        updatedData.name_thai,
+        updatedData.department,
+        updatedData.faculty,
+        updatedData.contact,
+        updatedData.phone,
+        updatedData.office,
+        updatedData.image,
+        researcherId,
+      ]
+    );
+    if (result.affectedRows === 0) {
+      return res.json({
+        status: 'error',
+        message: 'No changes',
+      });
+    }
+    res.json({
+      status: 'ok',
+      message: 'Researcher update',
+      researcherId: researcherId,
+      updatedData: updatedData, // ส่งคืนข้อมูลที่อัปเดต
+    });
+  } catch (err) {
+    res.json({
+      status: 'error',
+      message: err.message,
+    });
+  }
+});
+
 //เพิ่ม อัพเดต แค่รูปนักวิจัย
-router.put('/update/:id', upload.single('image'), async (req, res) => {
-  const researcherId = req.params.id; // รับค่า id จาก URL
+router.put('/image/:id', upload.single('image'), async (req, res) => {
+  const researcherId = req.params.id;
   const image = req.file ? req.file.filename : null;
   try {
     const [result] = await pool.execute(
@@ -156,7 +227,7 @@ router.put('/update/:id', upload.single('image'), async (req, res) => {
     );
     res.json({
       status: 'ok',
-      message: 'Image updated successfully',
+      message: 'Image update',
       researcherId: researcherId, 
       image: image,
     });
@@ -168,21 +239,122 @@ router.put('/update/:id', upload.single('image'), async (req, res) => {
   }
 });
 
-
 //ลบนักวิจัย
-router.delete('/:id', async function (req, res, next) {
+router.delete('/:department/:id', async function (req, res, next) {
   try {
       const [results] = await pool.execute(
           'DELETE FROM researcher WHERE id = ?',
           [req.params.id]
       );
-      res.json({ status: 'ok', message: 'Researcher deleted successfully' });
+      res.json({ status: 'ok', message: 'Researcher delete' });
   } catch (err) {
       res.json({ status: 'error', message: err.message });
   }
 });
 
 
+//เพิ่มงานวิจัยของนักวิจัย id นั้นๆ
+router.post('/:department/:id/new', async (req, res) => {
+  //console.log(req.body);
+  const { department, id } = req.params;  
+  const { paper, year, source, cited, link_to_paper } = req.body;  
+  try {
+    const [result] = await pool.execute(
+      `INSERT INTO scopus (researcher_id, paper, year, source, cited, link_to_paper) 
+       VALUES (?, ?, ?, ?, ?, ?)`, 
+      [id, paper, year, source, cited, link_to_paper]  // ส่งข้อมูลไปที่ฐานข้อมูล
+    );
+    res.json({
+      status: 'ok',
+      message: 'Data added successfully',
+      scopusId: result.insertId,  // ส่งคืน ID ของ scopus ที่เพิ่มใหม่
+    });
+  } catch (err) {
+    res.json({
+      status: 'error',
+      message: err.message,  
+    });
+  }
+});
+
+
+//อัพเดต แก้ไข งานวิจัย
+router.put('/:department/:researcherId/:scopusId/edit', async (req, res) => {
+  const { department, researcherId, scopusId } = req.params; 
+  const { paper, year, source, cited, link_to_paper } = req.body; 
+  try {
+    // ดึงข้อมูลงานวิจัยปัจจุบันจากตาราง scopus
+    const [existingData] = await pool.execute(
+      `SELECT * FROM scopus WHERE id = ? AND researcher_id = ?`,
+      [scopusId, researcherId]
+    );
+    if (existingData.length === 0) {
+      return res.json({
+        status: 'error',
+        message: 'Research data not found',
+      });
+    }
+    const currentData = existingData[0]; 
+    // รวมข้อมูลใหม่กับข้อมูลเดิม (ถ้าข้อมูลใหม่ไม่มีการส่งมา)
+    const updatedData = {
+      paper: paper || currentData.paper,
+      year: year || currentData.year,
+      source: source || currentData.source,
+      cited: (cited !== undefined) ? cited : currentData.cited,
+      link_to_paper: link_to_paper || currentData.link_to_paper,
+    };
+
+    // อัปเดตข้อมูลในตาราง scopus
+    const [result] = await pool.execute(
+      `UPDATE scopus 
+       SET paper = ?, year = ?, source = ?, cited = ?, link_to_paper = ?
+       WHERE id = ? AND researcher_id = ?`,
+      [
+        updatedData.paper,
+        updatedData.year,
+        updatedData.source,
+        updatedData.cited,
+        updatedData.link_to_paper,
+        scopusId,
+        researcherId,
+      ]
+    );
+    if (result.affectedRows === 0) {
+      return res.json({
+        status: 'error',
+        message: 'No changes made to research data',
+      });
+    }
+    res.json({
+      status: 'ok',
+      message: 'Research data update',
+      researcherId: researcherId,
+      scopusId: scopusId,
+      updatedData: updatedData, // ส่งคืนข้อมูลที่อัปเดต
+    });
+  } catch (err) {
+    res.json({
+      status: 'error',
+      message: err.message,
+    });
+  }
+});
+
+//ลบงานวิจัย
+router.delete('/:department/:researcherId/:scopusId', async function (req, res, next) {
+  const { department, researcherId, scopusId } = req.params; 
+
+  try {
+    // ลบข้อมูลงานวิจัยจากตาราง scopus ที่ตรงกับ researcherId และ scopusId
+    const [results] = await pool.execute(
+      'DELETE FROM scopus WHERE id = ? AND researcher_id = ?',
+      [scopusId, researcherId]
+    );
+      res.json({ status: 'ok', message: 'Research delete' });
+  } catch (err) {
+      res.json({ status: 'error', message: err.message });
+  }
+});
 
 module.exports = router;
 

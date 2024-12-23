@@ -8,11 +8,7 @@ const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 const saltRounds = 10; 
 
-// router.get('/', (req, res) => {
-//   res.send('หน้า Login');
-// });
 
-// Register: เพิ่มข้อมูล admin ใหม่
 router.post('/register', jsonParser, async function (req, res) {
   try {
     const hash = await bcrypt.hash(req.body.password, saltRounds);
@@ -37,7 +33,7 @@ router.post('/', jsonParser, async function (req, res) {
 
     const isLogin = await bcrypt.compare(req.body.password, user[0].password);
     if (isLogin) {
-      const token = jwt.sign({ email: user[0].email }, secret, { expiresIn: '1h' });
+      const token = jwt.sign({ email: user[0].email }, secret, );
       res.json({ status: 'ok', message: 'login success', token });
     } else {
       res.json({ status: 'error', message: 'login failed' });

@@ -3,17 +3,14 @@ var cors = require('cors');
 const multer = require('multer');
 const moment = require('moment-timezone');
 const router = express.Router();
-const pool = require('../config/db');
+const pool = require('../Config/db');
 require('dotenv').config();
 
-router.get('/', (req, res) => {
-    res.send('หน้าโพสกิจกรรม ประกาศต่างๆ');
-  });
 
-// เก็บไฟล์ภาพ
+// เก็บไฟล์ ภาพ
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      return cb(null, './public/image');
+      return cb(null, './public/news');
     },
     filename: function (req, file, cb) {
       return cb(null, `${Date.now()}_${file.originalname}`);
@@ -22,23 +19,34 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 //เพิ่มกิจกรรม ประกาศต่างๆ
-router.post('/new', upload.array('files', 10), async (req, res) => {
+router.post('/new', upload.fields([
+    { name: 'images', maxCount: 10 },  // สำหรับไฟล์ภาพ
+    { name: 'files', maxCount: 10 }    // สำหรับไฟล์อื่นๆ
+]), async (req, res) => {
     const topic = req.body.topic;
     const detail = req.body.detail;
     const admin = req.body.admin;
-    const images = req.files.map((file) => file.filename); // เก็บชื่อไฟล์ทั้งหมดใน array
-    const currentTime = moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss'); 
-
+    const images = req.files.images ? req.files.images.map((file) => file.filename) : [];
+    const files = req.files.files ? req.files.files.map((file) => file.filename) : [];
+    const currentTime = moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
     try {
         const [results] = await pool.execute(
-            'INSERT INTO activity (topic, detail, image, admin, time) VALUES (?, ?, ?, ?, ?)',
-            [topic, detail, JSON.stringify(images), admin, currentTime]
+            'INSERT INTO activity (topic, detail, image, files, admin, time) VALUES (?, ?, ?, ?, ?, ?)',
+            [
+                topic,
+                detail,
+                JSON.stringify(images), // เก็บไฟล์ภาพ
+                JSON.stringify(files),   // เก็บไฟล์อื่นๆ
+                admin,
+                currentTime
+            ]
         );
         res.json({
             status: 'ok',
             message: 'Activity added successfully',
             activityId: results.insertId,
-            uploadedFiles: images,
+            uploadedImages: images,
+            uploadedFiles: files,
             time: currentTime,
         });
     } catch (err) {
@@ -46,11 +54,12 @@ router.post('/new', upload.array('files', 10), async (req, res) => {
     }
 });
 
+
 //ดูข้อมูลกิจกรรมทั้งหมด
-router.get('/all', async function (req, res, next) {
+router.get('/', async function (req, res, next) {
     try {
         const [results] = await pool.execute(
-            'SELECT id, topic, detail, image, admin, time FROM activity'
+            'SELECT id, topic, detail, image, files, admin, time FROM activity'
         );
         res.json({ status: 'ok', allActivities: results });
     } catch (err) {

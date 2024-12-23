@@ -1,6 +1,6 @@
 var express = require('express');
 var cors = require('cors');
-const pool = require('./config/db');
+const pool = require('./Config/db');
 var app = express(); 
 var bodyParser = require('body-parser');
 var jsonParser = bodyParser.json();
@@ -11,20 +11,16 @@ const secret = 'login';
 const multer = require('multer');
 const moment = require('moment-timezone');
 require('dotenv').config();
+const applyMiddlewares = require('./Middleware');
 
-
-//middleware
-app.use(cors());
-app.use(bodyParser.json());  
-app.use(bodyParser.urlencoded({ extended: true }));  
-
+applyMiddlewares(app);
 
 // Import controllers
-const homeController = require('./controllers/home');
-const loginController = require('./controllers/login');
-const ebookController = require('./controllers/ebook');
-const researcherController = require('./controllers/researcher');
-const activityController = require('./controllers/activity');
+const homeController = require('./Controllers/home');
+const loginController = require('./Controllers/login');
+const ebookController = require('./Controllers/ebook');
+const researcherController = require('./Controllers/researcher');
+const activityController = require('./Controllers/activity');
 
 
 // API

@@ -2,14 +2,11 @@ var express = require('express');
 const router = express.Router();
 var cors = require('cors');
 const moment = require('moment-timezone');
-const pool = require('../config/db');
+const pool = require('../Config/db');
 require('dotenv').config();
 const multer = require('multer');
 const bodyParser = require('body-parser');
 const app = express();
-
-app.use(bodyParser.json());  // สำหรับ JSON
-app.use(bodyParser.urlencoded({ extended: true }));  
 
 
 //แสดงข้อมูลตาราง researcher
@@ -239,19 +236,6 @@ router.put('/image/:id', upload.single('image'), async (req, res) => {
   }
 });
 
-//ลบนักวิจัย
-router.delete('/:department/:id', async function (req, res, next) {
-  try {
-      const [results] = await pool.execute(
-          'DELETE FROM researcher WHERE id = ?',
-          [req.params.id]
-      );
-      res.json({ status: 'ok', message: 'Researcher delete' });
-  } catch (err) {
-      res.json({ status: 'error', message: err.message });
-  }
-});
-
 
 //เพิ่มงานวิจัยของนักวิจัย id นั้นๆ
 router.post('/:department/:id/new', async (req, res) => {
@@ -340,6 +324,7 @@ router.put('/:department/:researcherId/:scopusId/edit', async (req, res) => {
   }
 });
 
+
 //ลบงานวิจัย
 router.delete('/:department/:researcherId/:scopusId', async function (req, res, next) {
   const { department, researcherId, scopusId } = req.params; 
@@ -351,6 +336,20 @@ router.delete('/:department/:researcherId/:scopusId', async function (req, res, 
       [scopusId, researcherId]
     );
       res.json({ status: 'ok', message: 'Research delete' });
+  } catch (err) {
+      res.json({ status: 'error', message: err.message });
+  }
+});
+
+
+//ลบนักวิจัย
+router.delete('/:department/:id', async function (req, res, next) {
+  try {
+      const [results] = await pool.execute(
+          'DELETE FROM researcher WHERE id = ?',
+          [req.params.id]
+      );
+      res.json({ status: 'ok', message: 'Researcher delete' });
   } catch (err) {
       res.json({ status: 'error', message: err.message });
   }

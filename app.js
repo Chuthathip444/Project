@@ -24,7 +24,7 @@ const researcherController = require('./controllers/researcher');
 
 
 // API
-app.use('/', homeController); 
+app.use('/home', homeController); 
 app.use('/login', loginController); 
 app.use('/ebook', ebookController);
 app.use('/researcher', researcherController);
@@ -36,5 +36,5 @@ const { createServer } = require('http');
 const port = 3333;
 const server = createServer(app);
 server.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+  console.log(`Server running at http://localhost:${port}/home`);
 });

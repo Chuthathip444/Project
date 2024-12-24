@@ -46,12 +46,83 @@ router.post('/new', upload.fields([
             status: 'ok',
             message: 'Activity added successfully',
             activityId: results.insertId,
-            uploadedImages: images,
-            uploadedFiles: files,
             time: currentTime,
         });
     } catch (err) {
         res.json({ status: 'error', message: err.message });
+    }
+});
+
+
+//แก้ไข
+router.put('/:id/edit', upload.fields([
+    { name: 'images', maxCount: 10 }, // สำหรับไฟล์ภาพ
+    { name: 'files', maxCount: 10 }   // สำหรับไฟล์อื่นๆ
+]), async (req, res) => {
+    const activityId = req.params.id;
+    const { topic, detail, admin } = req.body; 
+    const images = req.files.images ? req.files.images.map((file) => file.filename) : null;
+    const files = req.files.files ? req.files.files.map((file) => file.filename) : null;
+    const currentTime = moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss'); 
+
+    try {
+        // ดึงข้อมูลปัจจุบันจากฐานข้อมูล
+        const [existingData] = await pool.execute(
+            'SELECT * FROM activity WHERE id = ?',
+            [activityId]
+        );
+
+        if (existingData.length === 0) {
+            return res.json({
+                status: 'error',
+                message: 'Activity not found',
+            });
+        }
+        const currentData = existingData[0]; 
+        // รวมข้อมูลใหม่กับข้อมูลปัจจุบัน
+        const updatedData = {
+            topic: topic || currentData.topic,
+            detail: detail || currentData.detail,
+            admin: admin || currentData.admin,
+            images: images ? JSON.stringify(images) : currentData.image,
+            files: files ? JSON.stringify(files) : currentData.files,
+            time: currentTime,
+        };
+
+        // อัปเดตข้อมูลในฐานข้อมูล
+        const [result] = await pool.execute(
+            `UPDATE activity 
+             SET topic = ?, detail = ?, image = ?, files = ?, admin = ?, time = ?
+             WHERE id = ?`,
+            [
+                updatedData.topic,
+                updatedData.detail,
+                updatedData.images,
+                updatedData.files,
+                updatedData.admin,
+                updatedData.time,
+                activityId,
+            ]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.json({
+                status: 'error',
+                message: 'No changes made',
+            });
+        }
+
+        res.json({
+            status: 'ok',
+            message: 'Activity updated successfully',
+            activityId: activityId,
+            updatedData: updatedData,
+        });
+    } catch (err) {
+        res.json({
+            status: 'error',
+            message: err.message,
+        });
     }
 });
 
@@ -67,6 +138,7 @@ router.get('/', async function (req, res, next) {
         res.json({ status: 'error', message: err.message });
     }
 });
+
 
 //ดูข้อมูลกิจกรรมหนึ่งโพส ตาม id
 router.get('/:id', async function (req, res, next) {

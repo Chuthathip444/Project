@@ -9,33 +9,25 @@ router.get('/', (req, res) => {
   res.send('Web Application for Research');
 });
 
-// Read all research
-// router.get('/research', async function (req, res, next) {
-//     try {
-//       const [results] = await pool.execute(
-//         'SELECT id, name, title, image, time FROM newresearch'
-//       );
-//       res.json({ status: 'ok', AllResearch: results });
-//     } catch (err) {
-//       res.json({ status: 'error', message: err.message });
-//     }
-//   });
-  
-// Read (Get research by ID)
-// router.get('/research/:id', async function (req, res, next) {
-//     try {
-//       const [results] = await pool.execute(
-//         'SELECT * FROM newresearch WHERE id=?',
-//         [req.params.id]
-//       );
-//       if (results.length === 0) {
-//         res.json({ status: 'error', message: 'Research not found' });
-//         return;
-//       }
-//       res.json({ status: 'ok', research: results[0] });
-//     } catch (err) {
-//       res.json({ status: 'error', message: err.message });
-//     }
-//   });
+
+//ดูข้อมูลกิจกรรมหนึ่งโพส ตาม id
+router.get('/:id', async function (req, res, next) {
+  try {
+      const [results] = await pool.execute(
+          'SELECT * FROM activity WHERE id = ?',
+          [req.params.id]
+      );
+      if (results.length === 0) {
+          res.json({ status: 'error', message: 'Activity not found' });
+          return;
+      }
+      res.json({ status: 'ok', activity: results[0] });
+  } catch (err) {
+      res.json({ status: 'error', message: err.message });
+  }
+});
+
+
+
 
 module.exports = router;

@@ -18,6 +18,7 @@ const storage = multer.diskStorage({
   });
 const upload = multer({ storage });
 
+
 //เพิ่มกิจกรรม ประกาศต่างๆ
 router.post('/new', upload.fields([
     { name: 'images', maxCount: 10 },  // สำหรับไฟล์ภาพ

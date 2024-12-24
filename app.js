@@ -19,8 +19,8 @@ applyMiddlewares(app);
 const homeController = require('./Controllers/home');
 const loginController = require('./Controllers/login');
 const ebookController = require('./Controllers/ebook');
-const researcherController = require('./Controllers/researcher');
 const activityController = require('./Controllers/activity');
+const researcherController = require('./Controllers/researcher');
 
 
 // API

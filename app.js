@@ -24,6 +24,9 @@ const researcherController = require('./controllers/researcher');
 
 
 // API
+app.get('/', (req, res) => {
+  res.redirect('/home'); 
+});
 app.use('/home', homeController); 
 app.use('/login', loginController); 
 app.use('/ebook', ebookController);

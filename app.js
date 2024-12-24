@@ -24,7 +24,7 @@ const researcherController = require('./controllers/researcher');
 
 
 // API
-app.use('/', homeController); 
+app.use('/home', homeController); 
 app.use('/login', loginController); 
 app.use('/ebook', ebookController);
 app.use('/researcher', researcherController);

@@ -3,7 +3,7 @@ var cors = require('cors');
 const multer = require('multer');
 const moment = require('moment-timezone');
 const router = express.Router();
-const pool = require('../Config/db');
+const pool = require('../config/db');
 require('dotenv').config();
 
 

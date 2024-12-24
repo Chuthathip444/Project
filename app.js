@@ -1,6 +1,6 @@
 var express = require('express');
 var cors = require('cors');
-const pool = require('./Config/db');
+const pool = require('./config/db');
 var app = express(); 
 var bodyParser = require('body-parser');
 var jsonParser = bodyParser.json();
@@ -16,11 +16,11 @@ const applyMiddlewares = require('./Middleware');
 applyMiddlewares(app);
 
 // Import controllers
-const homeController = require('./Controllers/home');
-const loginController = require('./Controllers/login');
-const ebookController = require('./Controllers/ebook');
-const activityController = require('./Controllers/activity');
-const researcherController = require('./Controllers/researcher');
+const homeController = require('./controllers/home');
+const loginController = require('./controllers/login');
+const ebookController = require('./controllers/ebook');
+const activityController = require('./controllers/activity');
+const researcherController = require('./controllers/researcher');
 
 
 // API

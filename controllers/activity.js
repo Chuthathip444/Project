@@ -7,6 +7,7 @@ const pool = require('../config/db');
 require('dotenv').config();
 
 
+
 // เก็บไฟล์ ภาพ
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -21,13 +22,13 @@ const upload = multer({ storage });
 
 //เพิ่มกิจกรรม ประกาศต่างๆ
 router.post('/new', upload.fields([
-    { name: 'images', maxCount: 10 },  // สำหรับไฟล์ภาพ
+    { name: 'image', maxCount: 10 },  // สำหรับไฟล์ภาพ
     { name: 'files', maxCount: 10 }    // สำหรับไฟล์อื่นๆ
 ]), async (req, res) => {
     const topic = req.body.topic;
     const detail = req.body.detail;
     const admin = req.body.admin;
-    const images = req.files.images ? req.files.images.map((file) => file.filename) : [];
+    const image = req.files.image ? req.files.image.map((file) => file.filename) : [];
     const files = req.files.files ? req.files.files.map((file) => file.filename) : [];
     const currentTime = moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
     try {
@@ -36,7 +37,7 @@ router.post('/new', upload.fields([
             [
                 topic,
                 detail,
-                JSON.stringify(images), // เก็บไฟล์ภาพ
+                JSON.stringify(image), // เก็บไฟล์ภาพ
                 JSON.stringify(files),   // เก็บไฟล์อื่นๆ
                 admin,
                 currentTime
@@ -54,19 +55,18 @@ router.post('/new', upload.fields([
 });
 
 
-//แก้ไข
+//error 
+//แก้ไขข่าว 
 router.put('/:id/edit', upload.fields([
-    { name: 'images', maxCount: 10 }, // สำหรับไฟล์ภาพ
+    { name: 'image', maxCount: 10 }, // สำหรับไฟล์ภาพ
     { name: 'files', maxCount: 10 }   // สำหรับไฟล์อื่นๆ
 ]), async (req, res) => {
-    const activityId = req.params.id;
-    const { topic, detail, admin } = req.body; 
-    const images = req.files.images ? req.files.images.map((file) => file.filename) : null;
-    const files = req.files.files ? req.files.files.map((file) => file.filename) : null;
-    const currentTime = moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss'); 
-
+    const activityId = req.params.id;  
+    const { topic, detail, admin } = req.body;
+    const image = req.files.image && req.files.image.length > 0 ? req.files.image.map((file) => file.filename) : null;
+    const files = req.files.files && req.files.files.length > 0 ? req.files.files.map((file) => file.filename) : null;
+    const currentTime = moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
     try {
-        // ดึงข้อมูลปัจจุบันจากฐานข้อมูล
         const [existingData] = await pool.execute(
             'SELECT * FROM activity WHERE id = ?',
             [activityId]
@@ -78,27 +78,26 @@ router.put('/:id/edit', upload.fields([
                 message: 'Activity not found',
             });
         }
-        const currentData = existingData[0]; 
+        const currentData = existingData[0];
+
         // รวมข้อมูลใหม่กับข้อมูลปัจจุบัน
         const updatedData = {
-            topic: topic || currentData.topic,
-            detail: detail || currentData.detail,
-            admin: admin || currentData.admin,
-            images: images ? JSON.stringify(images) : currentData.image,
-            files: files ? JSON.stringify(files) : currentData.files,
-            time: currentTime,
+            topic: topic || currentData.topic,  
+            detail: detail || currentData.detail,  
+            admin: admin || currentData.admin, 
+            image: image ? image.join(',') : currentData.image,  
+            files: files ? JSON.stringify(files) : currentData.files,  
+            time: currentTime,  
         };
-
-        // อัปเดตข้อมูลในฐานข้อมูล
         const [result] = await pool.execute(
             `UPDATE activity 
-             SET topic = ?, detail = ?, image = ?, files = ?, admin = ?, time = ?
+             SET topic = ?, detail = ?, image = ?, files = ?, admin = ?, time = ? 
              WHERE id = ?`,
             [
                 updatedData.topic,
                 updatedData.detail,
-                updatedData.images,
-                updatedData.files,
+                updatedData.image,  // เก็บชื่อไฟล์ภาพ
+                updatedData.files,  // เก็บไฟล์อื่นๆ
                 updatedData.admin,
                 updatedData.time,
                 activityId,
@@ -116,7 +115,7 @@ router.put('/:id/edit', upload.fields([
             status: 'ok',
             message: 'Activity updated successfully',
             activityId: activityId,
-            updatedData: updatedData,
+            updatedData: updatedData,  
         });
     } catch (err) {
         res.json({
@@ -156,6 +155,7 @@ router.get('/:id', async function (req, res, next) {
         res.json({ status: 'error', message: err.message });
     }
 });
+
 
 //ลบข้อมูลกิจกรรม id นั้น
 router.delete('/:id', async function (req, res, next) {

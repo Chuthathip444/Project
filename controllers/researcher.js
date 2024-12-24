@@ -143,37 +143,38 @@ const image = req.file ? req.file.filename : null;
 });
 
 //อัพเดต แก้ไข โปรไฟล์นักวิจัย
-router.put('/:department/update/:id', upload.single('image'), async (req, res) => {
+router.put('/:department/:id/update', upload.single('image'), async (req, res) => {
+  const department = req.params.department; 
   const researcherId = req.params.id; 
-  const { name, name_thai, department, faculty, contact, phone, office } = req.body;
-  const image = req.file ? req.file.filename : null; 
+  const { name, name_thai, faculty, contact, phone, office } = req.body;
+  const image = req.file ? req.file.filename : null;
+
   try {
-    // ดึงข้อมูลปัจจุบันของ researcher จากฐานข้อมูล
     const [existingData] = await pool.execute(
       `SELECT * FROM researcher WHERE id = ?`,
       [researcherId]
     );
+
     if (existingData.length === 0) {
       return res.json({
         status: 'error',
         message: 'Researcher not found',
       });
     }
-  const currentData = existingData[0]; // ข้อมูลปัจจุบันของ researcher
+    const currentData = existingData[0]; 
 
-  // รวมข้อมูลใหม่กับข้อมูลเดิม (ถ้าข้อมูลใหม่ไม่มีการส่งมา)
-  const updatedData = {
-    name: name || currentData.name,
-    name_thai: name_thai || currentData.name_thai,
-    department: department || currentData.department,
-    faculty: faculty || currentData.faculty,
-    contact: contact || currentData.contact,
-    phone: phone || currentData.phone,
-    office: office || currentData.office,
-    image: image || currentData.image,
-  };
+    // รวมข้อมูลใหม่กับข้อมูลเดิม (ถ้าข้อมูลใหม่ไม่มีการส่งมา)
+    const updatedData = {
+      name: name || currentData.name,
+      name_thai: name_thai || currentData.name_thai,
+      department: department || currentData.department,
+      faculty: faculty || currentData.faculty,
+      contact: contact || currentData.contact,
+      phone: phone || currentData.phone,
+      office: office || currentData.office,
+      image: image || currentData.image,
+    };
 
-  // อัปเดตข้อมูลลงในฐานข้อมูล
     const [result] = await pool.execute(
       `UPDATE researcher 
        SET name = ?, name_thai = ?, department = ?, faculty = ?, 
@@ -188,18 +189,18 @@ router.put('/:department/update/:id', upload.single('image'), async (req, res) =
         updatedData.phone,
         updatedData.office,
         updatedData.image,
-        researcherId,
+        researcherId, 
       ]
     );
     if (result.affectedRows === 0) {
       return res.json({
         status: 'error',
-        message: 'No changes',
+        message: 'No changes made',
       });
     }
     res.json({
       status: 'ok',
-      message: 'Researcher update',
+      message: 'Researcher updated successfully',
       researcherId: researcherId,
       updatedData: updatedData, // ส่งคืนข้อมูลที่อัปเดต
     });
@@ -210,6 +211,7 @@ router.put('/:department/update/:id', upload.single('image'), async (req, res) =
     });
   }
 });
+
 
 //เพิ่ม อัพเดต แค่รูปนักวิจัย
 router.put('/image/:id', upload.single('image'), async (req, res) => {

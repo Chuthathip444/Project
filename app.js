@@ -13,6 +13,7 @@ const moment = require('moment-timezone');
 require('dotenv').config();
 const applyMiddlewares = require('./Middleware');
 
+// Middleware
 applyMiddlewares(app);
 
 // Import controllers

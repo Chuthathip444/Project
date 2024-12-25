@@ -1,12 +1,12 @@
 var express = require('express');
 const router = express.Router();
 var cors = require('cors');
-const moment = require('moment-timezone');
 const pool = require('../config/db');
 require('dotenv').config();
-const multer = require('multer');
-const bodyParser = require('body-parser');
 const app = express();
+const { uploadProfile } = require('../Middleware/upload');
+const path = require('path');
+const fs = require('fs');
 
 
 //แสดงข้อมูลตาราง researcher
@@ -106,20 +106,9 @@ router.get('/:department/:id', async (req, res) => {
   }
 });
 
-//เก็บรูปนักวิจัย
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      return cb(null, './public/profile');
-    },
-    filename: function (req, file, cb) {
-      return cb(null, `${Date.now()}_${file.originalname}`);
-    },
-  });
-
-const upload = multer({ storage });
 
 //เพิ่มนักวิจัยคนใหม่
-router.post('/:department/new', upload.single('image'), async (req, res) => {
+router.post('/:department/new', uploadProfile.single('image'), async (req, res) => {
 const { name, name_thai, department, faculty, contact, phone, office } = req.body;
 const image = req.file ? req.file.filename : null; 
   try {
@@ -143,7 +132,7 @@ const image = req.file ? req.file.filename : null;
 });
 
 //อัพเดต แก้ไข โปรไฟล์นักวิจัย
-router.put('/:department/:id/update', upload.single('image'), async (req, res) => {
+router.put('/:department/:id/update', uploadProfile.single('image'), async (req, res) => {
   const department = req.params.department; 
   const researcherId = req.params.id; 
   const { name, name_thai, faculty, contact, phone, office } = req.body;
@@ -214,7 +203,7 @@ router.put('/:department/:id/update', upload.single('image'), async (req, res) =
 
 
 //เพิ่ม อัพเดต แค่รูปนักวิจัย
-router.put('/image/:id', upload.single('image'), async (req, res) => {
+router.put('/image/:id', uploadProfile.single('image'), async (req, res) => {
   const researcherId = req.params.id;
   const image = req.file ? req.file.filename : null;
   try {
@@ -330,7 +319,6 @@ router.put('/:department/:researcherId/:scopusId/edit', async (req, res) => {
 //ลบงานวิจัย
 router.delete('/:department/:researcherId/:scopusId', async function (req, res, next) {
   const { department, researcherId, scopusId } = req.params; 
-
   try {
     // ลบข้อมูลงานวิจัยจากตาราง scopus ที่ตรงกับ researcherId และ scopusId
     const [results] = await pool.execute(
@@ -345,17 +333,34 @@ router.delete('/:department/:researcherId/:scopusId', async function (req, res, 
 
 
 //ลบนักวิจัย
-router.delete('/:department/:id', async function (req, res, next) {
+router.delete('/:department/:id', async (req, res) => {
+  const researcherId = req.params.id;
   try {
-      const [results] = await pool.execute(
-          'DELETE FROM researcher WHERE id = ?',
-          [req.params.id]
-      );
-      res.json({ status: 'ok', message: 'Researcher delete' });
+    const [researcher] = await pool.execute('SELECT image FROM researcher WHERE id = ?', [researcherId]);
+    const imageFile = researcher[0].image; 
+    const imagePath = imageFile ? path.join(__dirname, '../public/profile', imageFile) : null;
+
+    // ลบไฟล์รูปภาพ ถ้ามีไฟล์อยู่ในเซิร์ฟเวอร์
+    if (imagePath && fs.existsSync(imagePath)) {
+      fs.unlink(imagePath, (err) => {
+        if (err) {
+          console.error('Error removing image file:', err);
+        } else {
+          console.log('Image file removed:', imageFile);
+        }
+      });
+    }
+
+    // ลบนักวิจัยออกจากฐานข้อมูล
+    await pool.execute('DELETE FROM researcher WHERE id = ?', [researcherId]);
+
+    res.json({ status: 'ok', message: 'Researcher and image deleted successfully' });
   } catch (err) {
-      res.json({ status: 'error', message: err.message });
+    res.json({ status: 'error', message: err.message });
   }
 });
+
+
 
 module.exports = router;
 

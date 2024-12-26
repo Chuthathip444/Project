@@ -12,9 +12,12 @@ const multer = require('multer');
 const moment = require('moment-timezone');
 require('dotenv').config();
 const applyMiddlewares = require('./Middleware');
+const path = require('path');
 
 // Middleware
 applyMiddlewares(app);
+
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Import controllers
 const homeController = require('./controllers/home');

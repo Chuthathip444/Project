@@ -144,15 +144,29 @@ router.get('/:id', async function (req, res, next) {
             WHERE a.id = ?`,  
             [req.params.id]    
         );
-        if (results.length === 0) {
-            res.json({ status: 'error', message: 'Activity not found' });
-            return;
+        if (results.length > 0) {
+            const ImageUrl = results.map(result => ({
+              ...result,
+              imageUrl: `/public/news/${result.image}` // เพิ่ม imageUrl ในแต่ละแถว
+            }));
+      
+            res.json({
+              status: 'ok',
+              data: ImageUrl, 
+            });
+          } else {
+            res.status(404).json({
+              status: 'error',
+              message: 'No data found',
+            });
+          }
+        } catch (err) {
+          res.json({
+            status: 'error',
+            message: err.message,
+          });
         }
-        res.json({ status: 'ok', activity: results[0] });
-    } catch (err) {
-        res.json({ status: 'error', message: err.message });
-    }
-});
+    });
 
 
 //ลบข้อมูลกิจกรรม id นั้น

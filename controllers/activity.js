@@ -49,6 +49,10 @@ router.post('/:activityId/image', uploadNews.array('image_path', 10), async (req
     try {
         await Promise.all(imagePaths.map((path) =>pool.execute(
         `INSERT INTO activity_images (activity_id, image_path) VALUES (?, ?)`,
+        [
+            activity_id,
+            JSON.stringify(image)
+        ]
         [activityId, path] 
     )));
         res.json({
@@ -108,7 +112,7 @@ router.get('/', async function (req, res, next) {
         if (results.length > 0) {
             const ImageUrl = results.map(result => ({
               ...result,
-              imageUrl: `/public/profile/${result.image}` // เพิ่ม imageUrl ในแต่ละแถว
+              imageUrl: `/public/news/${result.image}` // เพิ่ม imageUrl ในแต่ละแถว
             }));
       
             res.json({

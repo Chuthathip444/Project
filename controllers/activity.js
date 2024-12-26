@@ -105,12 +105,29 @@ router.get('/', async function (req, res, next) {
             FROM activity a
             LEFT JOIN activity_images ai ON a.id = ai.activity_id`
         );
-        res.json({ status: 'ok', allActivities: results });
-    } catch (err) {
-        res.json({ status: 'error', message: err.message });
-    }
-});
-
+        if (results.length > 0) {
+            const ImageUrl = results.map(result => ({
+              ...result,
+              imageUrl: `/public/profile/${result.image}` // เพิ่ม imageUrl ในแต่ละแถว
+            }));
+      
+            res.json({
+              status: 'ok',
+              data: ImageUrl, 
+            });
+          } else {
+            res.status(404).json({
+              status: 'error',
+              message: 'No data found',
+            });
+          }
+        } catch (err) {
+          res.json({
+            status: 'error',
+            message: err.message,
+          });
+        }
+    });
 
 
 //ดูข้อมูลกิจกรรมหนึ่งโพส ตาม id

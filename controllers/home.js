@@ -14,8 +14,11 @@ router.get('/', (req, res) => {
 router.get('/:id', async function (req, res, next) {
   try {
       const [results] = await pool.execute(
-          'SELECT * FROM activity WHERE id = ?',
-          [req.params.id]
+          `SELECT a.id, a.topic, a.detail, ai.image_path AS image, a.files, a.admin, a.time
+          FROM activity a
+          LEFT JOIN activity_images ai ON a.id = ai.activity_id
+          WHERE a.id = ?`,  
+          [req.params.id]    
       );
       if (results.length === 0) {
           res.json({ status: 'error', message: 'Activity not found' });

@@ -7,7 +7,7 @@ const profileStorage = multer.diskStorage({
         cb(null, './public/profile'); 
     },
     filename: function (req, file, cb) {
-        cb(null, `${Date.now()}_${file.originalname}`);
+        cb(null, file.originalname); 
     },
 });
 
@@ -17,7 +17,7 @@ const newsStorage = multer.diskStorage({
         cb(null, './public/news'); 
     },
     filename: function (req, file, cb) {
-        cb(null, `${Date.now()}_${file.originalname}`);
+        cb(null, file.originalname); 
     },
 });
 

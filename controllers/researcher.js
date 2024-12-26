@@ -8,6 +8,7 @@ const { uploadProfile } = require('../Middleware/upload');
 const path = require('path');
 const fs = require('fs');
 
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 //แสดงข้อมูลตาราง researcher
 router.get('/', async (req, res) => {
@@ -15,13 +16,26 @@ router.get('/', async (req, res) => {
     const [results] = await pool.execute(
       `SELECT id AS id, name AS name, name_thai AS name_thai,
        department AS department, faculty AS faculty, contact AS contact,
-       phone AS phone, office AS office ,image AS image
+       phone AS phone, office AS office, image AS image
        FROM researcher`
     );
-    res.json({
-      status: 'ok',
-      data: results,
-    });
+
+    if (results.length > 0) {
+      const ImageUrl = results.map(result => ({
+        ...result,
+        imageUrl: `/public/profile/${result.image}` // เพิ่ม imageUrl ในแต่ละแถว
+      }));
+
+      res.json({
+        status: 'ok',
+        data: ImageUrl, 
+      });
+    } else {
+      res.status(404).json({
+        status: 'error',
+        message: 'No data found',
+      });
+    }
   } catch (err) {
     res.json({
       status: 'error',
@@ -29,6 +43,7 @@ router.get('/', async (req, res) => {
     });
   }
 });
+
 
 //แสดงข้อมูลจากสองตาราง researcher และ scopus_2019_2023 ทั้งหมด
 router.get('/scopus', async (req, res) => {
@@ -53,27 +68,40 @@ router.get('/scopus', async (req, res) => {
 
 //แยกภาควิชา มี4ภาค 
 router.get('/:department', async (req, res) => {
-  const department = req.params.department; // รับ department จาก URL
+  const department = req.params.department; 
   try {
-    const [data] = await pool.execute(
+    const [results] = await pool.execute(
       `SELECT 
-    r.id AS id, 
-    r.name AS name, 
-    r.name_thai AS name_thai,
-    r.department AS department,
-    r.faculty AS faculty,
-    r.contact AS contact,
-    r.phone AS phone,
-    r.office AS office,
-    r.image AS image
-    FROM researcher r
-    WHERE r.department = ?`, // ค้นหาจาก department
+        r.id AS id, 
+        r.name AS name, 
+        r.name_thai AS name_thai,
+        r.department AS department,
+        r.faculty AS faculty,
+        r.contact AS contact,
+        r.phone AS phone,
+        r.office AS office,
+        r.image AS image
+      FROM researcher r
+      WHERE r.department = ?`, 
       [department]
     );
-    res.json({
-      status: 'ok',
-      data: data,
-    });
+
+    if (results.length > 0) {// เพิ่ม URL รูปภาพให้กับทุกแถว
+      const ImageUrl = results.map(result => ({
+        ...result,
+        imageUrl: `/public/profile/${result.image}` 
+      }));
+
+      res.json({
+        status: 'ok',
+        data: ImageUrl, 
+      });
+    } else {
+      res.status(404).json({
+        status: 'error',
+        message: 'No data found for this department',
+      });
+    }
   } catch (err) {
     res.json({
       status: 'error',
@@ -81,6 +109,7 @@ router.get('/:department', async (req, res) => {
     });
   }
 });
+
 
 //แสดงข้อมูลนักวิจัยแต่ละคนด้วย id ว่ามีกี่วิจัย
 router.get('/:department/:id', async (req, res) => {

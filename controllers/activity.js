@@ -8,6 +8,58 @@ const fs = require('fs');
 const path = require('path');
 
 
+// ตั้งค่า static directory สำหรับการเข้าถึงไฟล์ในโฟลเดอร์ public
+router.use('/public', express.static(path.join(__dirname, '..', 'public')));
+
+router.get('/:activityId/:imageId', async (req, res) => {
+    try {
+        const { activityId, imageId } = req.params; 
+        const [results] = await pool.execute(
+            `SELECT a.id, a.topic, a.detail, ai.image_path AS image, a.files, a.admin, a.time
+            FROM activity a
+            LEFT JOIN activity_images ai ON a.id = ai.activity_id
+            WHERE a.id = ? AND ai.id = ?`, [activityId, imageId]
+        );
+
+        if (results.length > 0) {
+            // เพิ่ม URL ของรูปภาพเพื่อให้สามารถแสดงในหน้าเว็บ
+            const imageUrl = `/public/news/${results[0].image}`;  
+            res.json({
+                status: 'ok',
+                data: { ...results[0], imageUrl }, 
+            });
+        } else {
+            res.status(404).json({ 
+                status: 'error', 
+                message: 'Image not found' });
+        }
+    } catch (err) {
+        res.status(500).json({
+            status: 'error',
+            message: err.message,
+        });
+    }
+});
+
+
+
+router.post('/:activityId/image', uploadNews.array('image_path', 10), async (req, res) => {
+    const { activityId } = req.params;
+    const imagePaths = req.files ? req.files.map((file) => file.filename) : [];
+    try {
+        await Promise.all(imagePaths.map((path) =>pool.execute(
+        `INSERT INTO activity_images (activity_id, image_path) VALUES (?, ?)`,
+        [activityId, path] 
+    )));
+        res.json({
+            status: 'ok',
+            message: 'Images uploaded successfully',
+        });
+    } catch (err) {
+        res.status(500).json({ status: 'error', message: err.message });
+    }
+});
+
 
 //เพิ่มกิจกรรม ประกาศต่างๆ
 router.post('/new', uploadNews.fields([
@@ -121,7 +173,9 @@ router.put('/:id/edit', uploadNews.fields([
 router.get('/', async function (req, res, next) {
     try {
         const [results] = await pool.execute(
-            'SELECT id, topic, detail, image, files, admin, time FROM activity'
+            `SELECT a.id, a.topic, a.detail, ai.image_path AS image, a.files, a.admin, a.time
+            FROM activity a
+            LEFT JOIN activity_images ai ON a.id = ai.activity_id`
         );
         res.json({ status: 'ok', allActivities: results });
     } catch (err) {
@@ -130,12 +184,16 @@ router.get('/', async function (req, res, next) {
 });
 
 
+
 //ดูข้อมูลกิจกรรมหนึ่งโพส ตาม id
 router.get('/:id', async function (req, res, next) {
     try {
         const [results] = await pool.execute(
-            'SELECT * FROM activity WHERE id = ?',
-            [req.params.id]
+            `SELECT a.id, a.topic, a.detail, ai.image_path AS image, a.files, a.admin, a.time
+            FROM activity a
+            LEFT JOIN activity_images ai ON a.id = ai.activity_id
+            WHERE a.id = ?`,  
+            [req.params.id]    
         );
         if (results.length === 0) {
             res.json({ status: 'error', message: 'Activity not found' });

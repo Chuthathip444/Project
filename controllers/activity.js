@@ -11,6 +11,7 @@ const path = require('path');
 // ตั้งค่า static directory สำหรับการเข้าถึงไฟล์ในโฟลเดอร์ public
 router.use('/public', express.static(path.join(__dirname, '..', 'public')));
 
+
 router.get('/:activityId/:imageId', async (req, res) => {
     try {
         const { activityId, imageId } = req.params; 
@@ -42,7 +43,6 @@ router.get('/:activityId/:imageId', async (req, res) => {
 });
 
 
-
 router.post('/:activityId/image', uploadNews.array('image_path', 10), async (req, res) => {
     const { activityId } = req.params;
     const imagePaths = req.files ? req.files.map((file) => file.filename) : [];
@@ -66,10 +66,11 @@ router.post('/:activityId/image', uploadNews.array('image_path', 10), async (req
 
 
 //เพิ่มกิจกรรม ประกาศต่างๆ
-router.post('/new', uploadNews.fields([
-    { name: 'image', maxCount: 10 },  // สำหรับไฟล์ภาพ
-    { name: 'files', maxCount: 10 }    // สำหรับไฟล์อื่นๆ
-]), async (req, res) => {
+router.post('/new', 
+    uploadNews.fields([
+        { name: 'image', maxCount: 10 },
+        { name: 'files', maxCount: 10 }]), 
+    async (req, res) => {
     const topic = req.body.topic;
     const detail = req.body.detail;
     const admin = req.body.admin;
@@ -90,7 +91,7 @@ router.post('/new', uploadNews.fields([
         );
         res.json({
             status: 'ok',
-            message: 'Activity added successfully',
+            message: 'Activity added success',
             activityId: results.insertId,
             time: currentTime,
         });
@@ -100,71 +101,85 @@ router.post('/new', uploadNews.fields([
 });
 
 
-
 //ดูข้อมูลกิจกรรมทั้งหมด
-router.get('/', async function (req, res, next) {
+router.get('/', async (req, res) => {
     try {
-        const [results] = await pool.execute(
-            `SELECT a.id, a.topic, a.detail, ai.image_path AS image, a.files, a.admin, a.time
-            FROM activity a
-            LEFT JOIN activity_images ai ON a.id = ai.activity_id`
-        );
-        if (results.length > 0) {
-            const ImageUrl = results.map(result => ({
-              ...result,
-              imageUrl: `/public/news/${result.image}` // เพิ่ม imageUrl ในแต่ละแถว
-            }));
-      
-            res.json({
-              status: 'ok',
-              data: ImageUrl, 
-            });
-          } else {
-            res.status(404).json({
-              status: 'error',
-              message: 'No data found',
-            });
-          }
-        } catch (err) {
-          res.json({
-            status: 'error',
-            message: err.message,
-          });
-        }
-    });
+      const [results] = await pool.execute(
+        `SELECT id, topic, detail, image, files, admin, time FROM activity`
+      );
+  
+      if (results.length > 0) {
+        const data = results.map(result => {
+          let images = [];
+          let files = [];
+  
+        try {images = JSON.parse(result.image || '[]');
+        } catch (e) {images = result.image ? result.image.split(',') : [];}
 
+        try {files = JSON.parse(result.files || '[]');
+        } catch (e) {files = result.files ? result.files.split(',') : [];}
+  
+        const imageUrl = images.map(image => `/public/news/${image.trim()}`);
+        const filesUrl = files.map(file => `/public/news/${file.trim()}`);
+  
+        return {
+        ...result,
+        imageUrl,
+        filesUrl,
+        };
+    });
+        res.json({
+          status: 'ok',
+          data: data,
+        });
+      } else {
+        res.status(404).json({
+          status: 'error',
+          message: 'No data found',
+        });
+      }
+    } catch (err) {
+      res.json({
+        status: 'error',
+        message: err.message,
+      });
+    }
+  });
+  
 
 //ดูข้อมูลกิจกรรมหนึ่งโพส ตาม id
 router.get('/:id', async function (req, res, next) {
     try {
-        const [results] = await pool.execute(
-            `SELECT a.id, a.topic, a.detail, ai.image_path AS image, a.files, a.admin, a.time
-            FROM activity a
-            LEFT JOIN activity_images ai ON a.id = ai.activity_id
-            WHERE a.id = ?`,  
-            [req.params.id]    
-        );
-        // เพิ่ม imageUrl ในแต่ละแถว
-        if (results.length > 0) { 
-            const ImageUrl = results.map(result => ({...result,imageUrl: `/public/news/${result.image}` }));
-      
-            res.json({
-              status: 'ok',
-              data: ImageUrl, 
-            });
-          } else {
-            res.status(404).json({
-              status: 'error',
-              message: 'No data found',
-            });
-          }
-        } catch (err) {
-          res.json({
-            status: 'error',
-            message: err.message,
-          });
-        }
-    });
+      const [results] = await pool.execute(
+        `SELECT id, topic, detail, image, files, admin, time
+         FROM activity
+         WHERE id = ?`,
+        [req.params.id]
+      );
+  
+      if (results.length > 0) {
+        const result = results[0];
+        const images = JSON.parse(result.image || '[]');
+        const files = JSON.parse(result.files || '[]');
+        const imageUrl = images.map(image => `/public/news/${image}`);
+        const filesUrl = files.map(file => `/public/news/${file}`);
+
+        res.json({
+          status: 'ok',
+          data: {...result,
+            imageUrl,
+            filesUrl,
+          },
+        });
+      }
+    } catch (err) {
+      res.json({
+        status: 'error',
+        message: err.message,
+      });
+    }
+  });
+  
 
 
 //ลบข้อมูลกิจกรรม id นั้น
@@ -178,17 +193,11 @@ router.delete('/:id', async function (req, res, next) {
         let imageFiles = [];
         let files = [];
         // แปลงข้อมูลในคอลัมน์ image และ files เป็น JSON array
-        try {
-            imageFiles = JSON.parse(activityData.image); 
-        } catch (err) {
-            console.log("Error parsing image data:", err);
-        }
+        try {imageFiles = JSON.parse(activityData.image); 
+        } catch (err) {console.log("Error parsing image data:", err);}
 
-        try {
-            files = JSON.parse(activityData.files); 
-        } catch (err) {
-            console.log("Error parsing files data:", err);
-        }
+        try {files = JSON.parse(activityData.files); 
+        } catch (err) {console.log("Error parsing files data:", err);}
 
         // ลบไฟล์ภาพ (คอลัมน์ image)
         if (imageFiles && imageFiles.length > 0) {
@@ -224,7 +233,7 @@ router.delete('/:id', async function (req, res, next) {
             'DELETE FROM activity WHERE id = ?',
             [req.params.id]
         );
-        res.json({ status: 'ok', message: 'Activity and files deleted successfully' });
+        res.json({ status: 'ok', message: 'Deleted success' });
     } catch (err) {
         res.json({ status: 'error', message: err.message });
     }

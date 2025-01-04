@@ -144,11 +144,9 @@ router.get('/:id', async function (req, res, next) {
             WHERE a.id = ?`,  
             [req.params.id]    
         );
-        if (results.length > 0) {
-            const ImageUrl = results.map(result => ({
-              ...result,
-              imageUrl: `/public/news/${result.image}` // เพิ่ม imageUrl ในแต่ละแถว
-            }));
+        // เพิ่ม imageUrl ในแต่ละแถว
+        if (results.length > 0) { 
+            const ImageUrl = results.map(result => ({...result,imageUrl: `/public/news/${result.image}` }));
       
             res.json({
               status: 'ok',

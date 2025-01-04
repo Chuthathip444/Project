@@ -25,7 +25,7 @@ const loginController = require('./controllers/login');
 const ebookController = require('./controllers/ebook');
 const activityController = require('./controllers/activity');
 const researcherController = require('./controllers/researcher');
-
+const researchController = require('./controllers/research');
 
 // API
 app.get('/', (req, res) => {
@@ -36,7 +36,7 @@ app.use('/login', loginController);
 app.use('/ebook', ebookController);
 app.use('/researcher', researcherController);
 app.use('/activity', activityController);
-
+app.use('/research', researchController);
 
 //server
 const { createServer } = require('http');

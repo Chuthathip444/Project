@@ -36,12 +36,12 @@ router.get('/track', async (req, res) => {
 
 // API: ดูจำนวนผู้เข้าชมทั้งหมด
 router.get('/stats', async (req, res) => {
-  const statsQuery = 'SELECT COUNT(*) AS uniqueVisitors FROM visitors';
+  const statsQuery = 'SELECT COUNT(*) AS Visitors FROM visitors';
 
   try {
     // ใช้คำสั่ง query แบบ Promise
     const [results] = await pool.query(statsQuery);
-    res.json({ uniqueVisitors: results[0].uniqueVisitors });
+    res.json({ Visitors: results[0].Visitors });
   } catch (err) {
     console.error('เกิดข้อผิดพลาดในการดึงข้อมูล:', err);
     res.status(500).send('เกิดข้อผิดพลาด');

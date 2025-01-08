@@ -21,7 +21,6 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Import controllers
 const homeController = require('./controllers/home');
-//const trackRoutes = require('./controllers/home');
 const loginController = require('./controllers/login');
 const ebookController = require('./controllers/ebook');
 const activityController = require('./controllers/activity');
@@ -31,7 +30,6 @@ const researchController = require('./controllers/research');
 // API
 app.get('/', (req, res) => { res.redirect('/home'); });
 app.use('/home', homeController); 
-//app.use('/', trackRoutes);
 app.use('/login', loginController); 
 app.use('/ebook', ebookController);
 app.use('/researcher', researcherController);

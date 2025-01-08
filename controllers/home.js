@@ -9,27 +9,44 @@ router.get('/', (req, res) => {
   res.send('Web Application for Research');
 });
 
+// API: นับจำนวนผู้เข้าชม
+router.get('/track', async (req, res) => {
+  const userIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
-//ดูข้อมูลกิจกรรมหนึ่งโพส ตาม id
-router.get('/:id', async function (req, res, next) {
   try {
-      const [results] = await pool.execute(
-          `SELECT a.id, a.topic, a.detail, ai.image_path AS image, a.files, a.admin, a.time
-          FROM activity a
-          LEFT JOIN activity_images ai ON a.id = ai.activity_id
-          WHERE a.id = ?`,  
-          [req.params.id]    
-      );
-      if (results.length === 0) {
-          res.json({ status: 'error', message: 'Activity not found' });
-          return;
-      }
-      res.json({ status: 'ok', activity: results[0] });
+    // ตรวจสอบว่า IP มีอยู่ในตารางแล้วหรือไม่
+    const checkQuery = 'SELECT COUNT(*) AS count FROM visitors WHERE ip_address = ?';
+    const [results] = await pool.query(checkQuery, [userIP]);
+
+    const isNewVisitor = results[0].count === 0;
+    if (isNewVisitor) {
+      // บันทึก IP Address ลงในตาราง
+      const insertQuery = 'INSERT INTO visitors (ip_address) VALUES (?)';
+      await pool.query(insertQuery, [userIP]);
+      res.json({ message: 'เพิ่มผู้เยี่ยมชมใหม่', ip: userIP });
+    } else {
+      res.json({ message: 'ผู้เยี่ยมชมนี้มีอยู่แล้ว', ip: userIP });
+    }
   } catch (err) {
-      res.json({ status: 'error', message: err.message });
+    console.error('เกิดข้อผิดพลาด:', err);
+    res.status(500).send('เกิดข้อผิดพลาด');
   }
 });
 
+
+// API: ดูจำนวนผู้เข้าชมทั้งหมด
+router.get('/stats', async (req, res) => {
+  const statsQuery = 'SELECT COUNT(*) AS uniqueVisitors FROM visitors';
+
+  try {
+    // ใช้คำสั่ง query แบบ Promise
+    const [results] = await pool.query(statsQuery);
+    res.json({ uniqueVisitors: results[0].uniqueVisitors });
+  } catch (err) {
+    console.error('เกิดข้อผิดพลาดในการดึงข้อมูล:', err);
+    res.status(500).send('เกิดข้อผิดพลาด');
+  }
+});
 
 
 

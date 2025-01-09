@@ -48,6 +48,8 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+
+
 // รวมAPI เก็บ IP Adress พร้อมกับบอกจำนวนผู้เข้าชมทั้งหมด
 router.get('/visitor', async (req, res) => {
   const userIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -60,7 +62,7 @@ router.get('/visitor', async (req, res) => {
       const insertQuery = 'INSERT INTO visitors (ip_address) VALUES (?)';
       await pool.query(insertQuery, [userIP]);
     }
-    
+
     // นับจำนวนผู้เข้าชมทั้งหมด
     const statsQuery = 'SELECT COUNT(*) AS Visitors FROM visitors';
     const [stats] = await pool.query(statsQuery);

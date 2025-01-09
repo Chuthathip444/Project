@@ -21,13 +21,13 @@ const newsStorage = multer.diskStorage({
     },
 });
 
-// โฟลเดอร์ files
-const filesStorage = multer.diskStorage({
+// โฟลเดอร์ ebook
+const ebookStorage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, './public/files'); 
+        cb(null, './public/ebook'); 
     },
     filename: function (req, file, cb) {
-        cb(null, file.originalname); 
+        cb(null, file.originalname);
     },
 });
 
@@ -35,7 +35,7 @@ const filesStorage = multer.diskStorage({
 // Middleware สำหรับจัดการอัปโหลด
 const uploadProfile = multer({ storage: profileStorage });
 const uploadNews = multer({ storage: newsStorage });
-const uploadFiles = multer({ storage: filesStorage});
+const uploadEbook = multer({ storage: ebookStorage});
 
 // เวลาปัจจุบันใน timezone ของกรุงเทพ
 const CurrentTime = () => moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
@@ -43,6 +43,6 @@ const CurrentTime = () => moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:s
 module.exports = {
     uploadProfile,
     uploadNews,
-    uploadFiles,
+    uploadEbook,
     CurrentTime,
 };

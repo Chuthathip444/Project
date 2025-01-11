@@ -11,7 +11,7 @@ const fs = require('fs');
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 //แสดงข้อมูลตาราง researcher
-router.get('/', async (req, res) => {
+router.get('/all', async (req, res) => {
   try {
     const [results] = await pool.execute(
       `SELECT id AS id, name AS name, name_thai AS name_thai,
@@ -66,9 +66,10 @@ router.get('/scopus', async (req, res) => {
   }
 });
 
+
 //แยกภาควิชา มี4ภาค 
-router.get('/:department', async (req, res) => {
-  const department = req.params.department; 
+router.get('/:department?', async (req, res) => {
+  const department = req.params.department || null;
   try {
     const [results] = await pool.execute(
       `SELECT 
@@ -82,16 +83,15 @@ router.get('/:department', async (req, res) => {
         r.office AS office,
         r.image AS image
       FROM researcher r
-      WHERE r.department = ?`, 
-      [department]
+      WHERE (? IS NULL AND (r.department IS NULL OR r.department = '' OR r.department IS null))
+      OR r.department = ?`, [department, department]
     );
-
-    if (results.length > 0) {// เพิ่ม URL รูปภาพให้กับทุกแถว
+    if (results.length > 0) {
       const ImageUrl = results.map(result => ({
         ...result,
-        imageUrl: `/public/profile/${result.image}` 
+        imageUrl: result.image 
+          ? `/public/profile/${result.image}` : null, 
       }));
-
       res.json({
         status: 'ok',
         data: ImageUrl, 
@@ -111,17 +111,25 @@ router.get('/:department', async (req, res) => {
 });
 
 
-//แสดงข้อมูลนักวิจัยแต่ละคนด้วย id ว่ามีกี่วิจัย
+// แสดงข้อมูลนักวิจัยแต่ละคนด้วย id ว่ามีกี่วิจัย
 router.get('/:department/:id', async (req, res) => {
-  const researcherId = req.params.id; 
+  const researcherId = req.params.id;
+  let department = req.params.department;
   try {
     const [results] = await pool.execute(
-      `SELECT r.id AS researcher_id, r.name AS researcher_name, 
-              s.id AS scopus_id, s.paper, s.year, s.source, s.cited, s.link_to_paper
+      `SELECT r.id AS researcher_id, 
+              r.name AS researcher_name, 
+              r.department AS department,
+              s.id AS scopus_id, 
+              s.paper, 
+              s.year, 
+              s.source, 
+              s.cited, 
+              s.link_to_paper
        FROM researcher r
        LEFT JOIN scopus s ON r.id = s.researcher_id
-       WHERE r.id = ?`, // Filter by researcher id
-      [researcherId]     
+       WHERE r.id = ? AND (r.department = ? OR r.department IS NULL OR r.department = '' OR r.department IS null)`, 
+      [researcherId, department]
     );
     res.json({
       status: 'ok',
@@ -136,29 +144,31 @@ router.get('/:department/:id', async (req, res) => {
 });
 
 
+
 //เพิ่มนักวิจัยคนใหม่
 router.post('/:department/new', uploadProfile.single('image'), async (req, res) => {
-const { name, name_thai, department, faculty, contact, phone, office } = req.body;
-const image = req.file ? req.file.filename : null; 
-  try {
-    const [result] = await pool.execute(
-      `INSERT INTO researcher (name, name_thai, department, faculty, contact, phone, office, image) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [name, name_thai, department, faculty, contact, phone, office, image]
-    );
-    res.json({
-      status: 'ok',
-      message: 'Researcher add',
-      researcherId: result.insertId,
-      image: image,
-    });
-  } catch (err) {
-    res.json({
-      status: 'error',
-      message: err.message,
-    });
-  }
+  const { name, name_thai, department, faculty, contact, phone, office } = req.body;
+  const image = req.file ? req.file.filename : null; 
+    try {
+      const [result] = await pool.execute(
+        `INSERT INTO researcher (name, name_thai, department, faculty, contact, phone, office, image) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [name, name_thai, department, faculty, contact, phone, office, image]
+      );
+      res.json({
+        status: 'ok',
+        message: 'Researcher add',
+        researcherId: result.insertId,
+        image: image,
+      });
+    } catch (err) {
+      res.json({
+        status: 'error',
+        message: err.message,
+      });
+    }
 });
+  
 
 //อัพเดต แก้ไข โปรไฟล์นักวิจัย
 router.put('/:department/:id/update', uploadProfile.single('image'), async (req, res) => {
@@ -229,6 +239,7 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
     });
   }
 });
+
 
 
 //เพิ่ม อัพเดต แค่รูปนักวิจัย

@@ -127,9 +127,9 @@ router.get('/:department/:id', async (req, res) => {
               s.link_to_paper
        FROM researcher r
        LEFT JOIN scopus s ON r.id = s.researcher_id
-       WHERE r.id = ? `, 
+       WHERE r.id = ? AND r.department = ?`, 
       [researcherId, department]
-    );
+    );    
     res.json({
       status: 'ok',
       data: results,

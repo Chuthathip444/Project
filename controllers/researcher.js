@@ -87,9 +87,7 @@ router.get('/:department', async (req, res) => {
     );
     if (results.length > 0) {
       const ImageUrl = results.map(result => ({
-        ...result,
-        imageUrl: result.image 
-          ? `/public/profile/${result.image}` : null, 
+        ...result, imageUrl: `/public/profile/${result.image}`, 
       }));
       res.json({
         status: 'ok',
@@ -113,7 +111,7 @@ router.get('/:department', async (req, res) => {
 // แสดงข้อมูลนักวิจัยแต่ละคนด้วย id ว่ามีกี่วิจัย
 router.get('/:department/:id', async (req, res) => {
   const researcherId = req.params.id;
-  const department = req.body;
+  //const department = req.params.department; 
   try {
     const [results] = await pool.execute(
       `SELECT r.id AS researcher_id, 
@@ -127,8 +125,8 @@ router.get('/:department/:id', async (req, res) => {
               s.link_to_paper
        FROM researcher r
        LEFT JOIN scopus s ON r.id = s.researcher_id
-       WHERE r.id = ? AND r.department = ?`, 
-      [researcherId, department]
+       WHERE r.id = ? `, 
+      [researcherId]
     );    
     res.json({
       status: 'ok',
@@ -141,7 +139,6 @@ router.get('/:department/:id', async (req, res) => {
     });
   }
 });
-
 
 
 //เพิ่มนักวิจัยคนใหม่

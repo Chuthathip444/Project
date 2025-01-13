@@ -113,7 +113,7 @@ router.get('/:department', async (req, res) => {
 // แสดงข้อมูลนักวิจัยแต่ละคนด้วย id ว่ามีกี่วิจัย
 router.get('/:department/:id', async (req, res) => {
   const researcherId = req.params.id;
-  const department = req.params.department;
+  const department = req.body;
   try {
     const [results] = await pool.execute(
       `SELECT r.id AS researcher_id, 

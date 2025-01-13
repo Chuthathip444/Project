@@ -11,7 +11,7 @@ const fs = require('fs');
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 //แสดงข้อมูลตาราง researcher
-router.get('/all', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const [results] = await pool.execute(
       `SELECT id AS id, name AS name, name_thai AS name_thai,
@@ -68,8 +68,8 @@ router.get('/scopus', async (req, res) => {
 
 
 //แยกภาควิชา มี4ภาค 
-router.get('/:department?', async (req, res) => {
-  const department = req.params.department || null;
+router.get('/:department', async (req, res) => {
+  const department = req.params.department ;
   try {
     const [results] = await pool.execute(
       `SELECT 
@@ -83,8 +83,7 @@ router.get('/:department?', async (req, res) => {
         r.office AS office,
         r.image AS image
       FROM researcher r
-      WHERE (? IS NULL AND (r.department IS NULL OR r.department = '' OR r.department IS null))
-      OR r.department = ?`, [department, department]
+      WHERE r.department = ?`, [department]
     );
     if (results.length > 0) {
       const ImageUrl = results.map(result => ({
@@ -128,7 +127,7 @@ router.get('/:department/:id', async (req, res) => {
               s.link_to_paper
        FROM researcher r
        LEFT JOIN scopus s ON r.id = s.researcher_id
-       WHERE r.id = ? AND (r.department = ? OR r.department IS NULL OR r.department = '' OR r.department IS null)`, 
+       WHERE r.id = ? `, 
       [researcherId, department]
     );
     res.json({

@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
     if (results.length > 0) {
       const ImageUrl = results.map(result => ({
         ...result,
-        imageUrl: `/public/profile/${result.image}` // เพิ่ม imageUrl ในแต่ละแถว
+        imageUrl: `/public/profile/${result.image}` // เพิ่ม imageUrl 
       }));
 
       res.json({
@@ -172,13 +172,11 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
   const researcherId = req.params.id; 
   const { name, name_thai, faculty, contact, phone, office } = req.body;
   const image = req.file ? req.file.filename : null;
-
   try {
     const [existingData] = await pool.execute(
       `SELECT * FROM researcher WHERE id = ?`,
       [researcherId]
     );
-
     if (existingData.length === 0) {
       return res.json({
         status: 'error',
@@ -186,8 +184,6 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
       });
     }
     const currentData = existingData[0]; 
-
-    // รวมข้อมูลใหม่กับข้อมูลเดิม (ถ้าข้อมูลใหม่ไม่มีการส่งมา)
     const updatedData = {
       name: name || currentData.name,
       name_thai: name_thai || currentData.name_thai,
@@ -224,9 +220,9 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
     }
     res.json({
       status: 'ok',
-      message: 'Researcher updated successfully',
+      message: 'Researcher update',
       researcherId: researcherId,
-      updatedData: updatedData, // ส่งคืนข้อมูลที่อัปเดต
+      updatedData: updatedData,
     });
   } catch (err) {
     res.json({
@@ -235,7 +231,6 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
     });
   }
 });
-
 
 
 //เพิ่ม อัพเดต แค่รูปนักวิจัย
@@ -273,12 +268,12 @@ router.post('/:department/:id/new', async (req, res) => {
     const [result] = await pool.execute(
       `INSERT INTO scopus (researcher_id, paper, year, source, cited, link_to_paper) 
        VALUES (?, ?, ?, ?, ?, ?)`, 
-      [id, paper, year, source, cited, link_to_paper]  // ส่งข้อมูลไปที่ฐานข้อมูล
+      [id, paper, year, source, cited, link_to_paper] 
     );
     res.json({
       status: 'ok',
-      message: 'Data added successfully',
-      scopusId: result.insertId,  // ส่งคืน ID ของ scopus ที่เพิ่มใหม่
+      message: 'Data add success',
+      scopusId: result.insertId, 
     });
   } catch (err) {
     res.json({
@@ -294,7 +289,6 @@ router.put('/:department/:researcherId/:scopusId/edit', async (req, res) => {
   const { department, researcherId, scopusId } = req.params; 
   const { paper, year, source, cited, link_to_paper } = req.body; 
   try {
-    // ดึงข้อมูลงานวิจัยปัจจุบันจากตาราง scopus
     const [existingData] = await pool.execute(
       `SELECT * FROM scopus WHERE id = ? AND researcher_id = ?`,
       [scopusId, researcherId]
@@ -305,17 +299,15 @@ router.put('/:department/:researcherId/:scopusId/edit', async (req, res) => {
         message: 'Research data not found',
       });
     }
+
     const currentData = existingData[0]; 
-    // รวมข้อมูลใหม่กับข้อมูลเดิม (ถ้าข้อมูลใหม่ไม่มีการส่งมา)
     const updatedData = {
       paper: paper || currentData.paper,
       year: year || currentData.year,
       source: source || currentData.source,
-      cited: (cited !== undefined) ? cited : currentData.cited,
+      cited: (cited !== undefined) ? cited : currentData.cited, 
       link_to_paper: link_to_paper || currentData.link_to_paper,
     };
-
-    // อัปเดตข้อมูลในตาราง scopus
     const [result] = await pool.execute(
       `UPDATE scopus 
        SET paper = ?, year = ?, source = ?, cited = ?, link_to_paper = ?
@@ -333,15 +325,15 @@ router.put('/:department/:researcherId/:scopusId/edit', async (req, res) => {
     if (result.affectedRows === 0) {
       return res.json({
         status: 'error',
-        message: 'No changes made to research data',
+        message: 'No changes made',
       });
     }
     res.json({
       status: 'ok',
-      message: 'Research data update',
+      message: 'Research update',
       researcherId: researcherId,
       scopusId: scopusId,
-      updatedData: updatedData, // ส่งคืนข้อมูลที่อัปเดต
+      updatedData: updatedData, 
     });
   } catch (err) {
     res.json({
@@ -350,6 +342,7 @@ router.put('/:department/:researcherId/:scopusId/edit', async (req, res) => {
     });
   }
 });
+
 
 
 //ลบงานวิจัย
@@ -390,7 +383,7 @@ router.delete('/:department/:id', async (req, res) => {
     // ลบนักวิจัยออกจากฐานข้อมูล
     await pool.execute('DELETE FROM researcher WHERE id = ?', [researcherId]);
 
-    res.json({ status: 'ok', message: 'Researcher and image deleted successfully' });
+    res.json({ status: 'ok', message: 'Researcher and image delete success' });
   } catch (err) {
     res.json({ status: 'error', message: err.message });
   }

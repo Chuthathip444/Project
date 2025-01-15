@@ -1,48 +1,44 @@
 const multer = require('multer');
 const moment = require('moment-timezone');
+const { cloudinary } = require('./cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-// โฟลเดอร์ profile
-const profileStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, './public/profile'); 
-    },
-    filename: function (req, file, cb) {
-        cb(null, file.originalname); 
-    },
-});
-
-// โฟลเดอร์ news ข่าว
-const newsStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, './public/news'); 
-    },
-    filename: function (req, file, cb) {
-        cb(null, file.originalname); 
+// ตั้งค่า Cloudinary Storage สำหรับอัปโหลดข่าว
+const cloudinaryStorageNews = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'uploadNews',  // โฟลเดอร์ที่ใช้เก็บไฟล์ข่าว
+        allowed_formats: ['jpg', 'png', 'pdf', 'doc', 'docx'],  
+        resource_type: 'auto',  
     },
 });
 
-// โฟลเดอร์ ebook
-const ebookStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, './public/ebook'); 
-    },
-    filename: function (req, file, cb) {
-        cb(null, file.originalname);
+// ตั้งค่า Cloudinary Storage สำหรับโปรไฟล์
+const cloudinaryStorageProfile = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'profile',  // โฟลเดอร์ที่ใช้เก็บไฟล์โปรไฟล์
+        allowed_formats: ['jpg', 'png'],  
+        resource_type: 'image',  
     },
 });
 
+// Middleware สำหรับการอัปโหลดไฟล์ข่าว
+const uploadNews = multer({
+    storage: cloudinaryStorageNews,
+    limits: { fileSize: 10 * 1024 * 1024 }, 
+});
 
-// Middleware สำหรับจัดการอัปโหลด
-const uploadProfile = multer({ storage: profileStorage });
-const uploadNews = multer({ storage: newsStorage });
-const uploadEbook = multer({ storage: ebookStorage});
+// Middleware สำหรับการอัปโหลดไฟล์โปรไฟล์
+const uploadProfile = multer({
+    storage: cloudinaryStorageProfile,
+    limits: { fileSize: 10 * 1024 * 1024 }, 
+});
 
-// เวลาปัจจุบันใน timezone ของกรุงเทพ
 const CurrentTime = () => moment().tz('Asia/Bangkok').format('YYYY-MM-DD HH:mm:ss');
 
 module.exports = {
-    uploadProfile,
     uploadNews,
-    uploadEbook,
+    uploadProfile,  
     CurrentTime,
 };

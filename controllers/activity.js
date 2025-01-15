@@ -66,41 +66,43 @@ router.post('/:activityId/image', uploadNews.array('image_path', 10), async (req
 
 
 //เพิ่มกิจกรรม ประกาศต่างๆ
-router.post('/new', uploadNews.fields([
-        { name: 'image', maxCount: 10 },
-        { name: 'files', maxCount: 10 }]), 
+router.post('/new',uploadNews.fields([
+        { name: 'image', maxCount: 10 }, 
+        { name: 'files', maxCount: 10 },]),
     async (req, res) => {
-    console.log('Request Body:', req.body); // Log ค่า Request Body
-    console.log('Uploaded Files:', req.files); // Log ไฟล์ที่อัปโหลด
-    const topic = req.body.topic;
-    const detail = req.body.detail;
-    const admin = req.body.admin;
-    const image = req.files.image ? req.files.image.map((file) => file.filename) : [];
-    const files = req.files.files ? req.files.files.map((file) => file.filename) : [];
-    const currentTime = CurrentTime() ;
-    try {
-        const [results] = await pool.execute(
-            'INSERT INTO activity (topic, detail, image, files, admin, time) VALUES (?, ?, ?, ?, ?, ?)',
-            [
-                topic,
-                detail,
-                JSON.stringify(image), // เก็บไฟล์ภาพ
-                JSON.stringify(files),   // เก็บไฟล์อื่นๆ
-                admin,
-                currentTime
-            ]
-        );
-        res.json({
-            status: 'ok',
-            message: 'Activity added success',
-            activityId: results.insertId,
-            time: currentTime,
-        });
-    } catch (err) {
-        console.error(err); // Log error
-        res.status(500).json({ status: 'error', message: err.message });
-    }    
-});
+        try {
+            console.log('Uploaded Files:', req.files);
+            const topic = req.body.topic;
+            const detail = req.body.detail;
+            const admin = req.body.admin;
+            const imageUrls = req.files.image ? req.files.image.map((file) => file.path) : [];
+            const fileUrls = req.files.files ? req.files.files.map((file) => file.path) : [];
+            const currentTime = CurrentTime();
+
+            const [results] = await pool.execute(
+                'INSERT INTO activity (topic, detail, image, files, admin, time) VALUES (?, ?, ?, ?, ?, ?)',
+                [
+                    topic,
+                    detail,
+                    JSON.stringify(imageUrls),
+                    JSON.stringify(fileUrls),
+                    admin,
+                    currentTime,
+                ]
+            );
+
+            res.json({
+                status: 'ok',
+                message: 'Activity add success',
+                activityId: results.insertId,
+                time: currentTime,
+            });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ status: 'error', message: err.message });
+        }
+    }
+);
 
 
 //ดูข้อมูลกิจกรรมทั้งหมด

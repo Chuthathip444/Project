@@ -66,11 +66,12 @@ router.post('/:activityId/image', uploadNews.array('image_path', 10), async (req
 
 
 //เพิ่มกิจกรรม ประกาศต่างๆ
-router.post('/new', 
-    uploadNews.fields([
+router.post('/new', uploadNews.fields([
         { name: 'image', maxCount: 10 },
         { name: 'files', maxCount: 10 }]), 
     async (req, res) => {
+    console.log('Request Body:', req.body); // Log ค่า Request Body
+    console.log('Uploaded Files:', req.files); // Log ไฟล์ที่อัปโหลด
     const topic = req.body.topic;
     const detail = req.body.detail;
     const admin = req.body.admin;
@@ -96,8 +97,9 @@ router.post('/new',
             time: currentTime,
         });
     } catch (err) {
-        res.json({ status: 'error', message: err.message });
-    }
+        console.error(err); // Log error
+        res.status(500).json({ status: 'error', message: err.message });
+    }    
 });
 
 

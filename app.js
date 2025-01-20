@@ -19,6 +19,8 @@ applyMiddlewares(app);
 
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
+
+
 // Import controllers
 const homeController = require('./controllers/home');
 const loginController = require('./controllers/login');

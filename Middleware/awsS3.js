@@ -1,0 +1,13 @@
+const { S3 } = require('@aws-sdk/client-s3');
+require('dotenv').config();
+
+// ตั้งค่า AWS S3
+const s3 = new S3({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
+
+module.exports = s3;

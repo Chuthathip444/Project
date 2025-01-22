@@ -45,11 +45,9 @@ const s3StorageProfile = multerS3({
 const deleteS3 = (fileUrl) => {
     const baseUrl = "https://research-app-file.s3.ap-southeast-1.amazonaws.com/";
     try {
-
         if (!fileUrl.startsWith(baseUrl)) {
             throw new Error("URL does not match the base URL of the S3 bucket.");
         }
-
         const fileKey = fileUrl.replace(baseUrl, "");
         const params = {
             Bucket: process.env.AWS_BUCKET_NAME, 

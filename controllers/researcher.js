@@ -4,7 +4,7 @@ var cors = require('cors');
 const pool = require('../config/db');
 require('dotenv').config();
 const app = express();
-const { uploadProfile } = require('../Middleware/upload');
+const { uploadProfile, deleteS3 } = require('../Middleware/upload');
 const path = require('path');
 const fs = require('fs');
 
@@ -23,9 +23,7 @@ router.get('/', async (req, res) => {
     if (results.length > 0) {
       const ImageUrl = results.map(result => ({
         ...result,
-        imageUrl: `/public/profile/${result.image}` // เพิ่ม imageUrl 
-      }));
-
+      })); //imageUrl: `/public/profile/${result.image}` // เพิ่ม imageUrl 
       res.json({
         status: 'ok',
         data: ImageUrl, 
@@ -36,6 +34,7 @@ router.get('/', async (req, res) => {
         message: 'No data found',
       });
     }
+
   } catch (err) {
     res.json({
       status: 'error',
@@ -87,7 +86,7 @@ router.get('/:department', async (req, res) => {
     );
     if (results.length > 0) {
       const ImageUrl = results.map(result => ({
-        ...result, imageUrl: `/public/profile/${result.image}`, 
+        ...result, 
       }));
       res.json({
         status: 'ok',
@@ -96,7 +95,7 @@ router.get('/:department', async (req, res) => {
     } else {
       res.status(404).json({
         status: 'error',
-        message: 'No data found for this department',
+        message: 'No data found',
       });
     }
   } catch (err) {
@@ -144,16 +143,17 @@ router.get('/:department/:id', async (req, res) => {
 //เพิ่มนักวิจัยคนใหม่
 router.post('/:department/new', uploadProfile.single('image'), async (req, res) => {
   const { name, name_thai, department, faculty, contact, phone, office } = req.body;
-  const image = req.file ? req.file.filename : null; 
+  const image = req.file ? req.file.location : null;
     try {
       const [result] = await pool.execute(
-        `INSERT INTO researcher (name, name_thai, department, faculty, contact, phone, office, image) 
+        `INSERT INTO researcher (name, name_thai
+        , department, faculty, contact, phone, office, image) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [name, name_thai, department, faculty, contact, phone, office, image]
       );
       res.json({
         status: 'ok',
-        message: 'Researcher add',
+        message: 'Researcher add successfully',
         researcherId: result.insertId,
         image: image,
       });
@@ -166,12 +166,12 @@ router.post('/:department/new', uploadProfile.single('image'), async (req, res) 
 });
   
 
-//อัพเดต แก้ไข โปรไฟล์นักวิจัย
+//แก้ไขโปรไฟล์นักวิจัย
 router.put('/:department/:id/update', uploadProfile.single('image'), async (req, res) => {
-  const department = req.params.department; 
-  const researcherId = req.params.id; 
+  const department = req.params.department;
+  const researcherId = req.params.id;
   const { name, name_thai, faculty, contact, phone, office } = req.body;
-  const image = req.file ? req.file.filename : null;
+  const image = req.file ? req.file.location : null;
   try {
     const [existingData] = await pool.execute(
       `SELECT * FROM researcher WHERE id = ?`,
@@ -183,7 +183,12 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
         message: 'Researcher not found',
       });
     }
+
     const currentData = existingData[0]; 
+    if (image && currentData.image) {
+      await deleteS3(currentData.image);
+    }
+
     const updatedData = {
       name: name || currentData.name,
       name_thai: name_thai || currentData.name_thai,
@@ -196,9 +201,8 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
     };
 
     const [result] = await pool.execute(
-      `UPDATE researcher 
-       SET name = ?, name_thai = ?, department = ?, faculty = ?, 
-           contact = ?, phone = ?, office = ?, image = ?
+      `UPDATE researcher SET name = ?, name_thai = ?, department = ?,
+       faculty = ?, contact = ?, phone = ?, office = ?, image = ?
        WHERE id = ?`,
       [
         updatedData.name,
@@ -209,18 +213,20 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
         updatedData.phone,
         updatedData.office,
         updatedData.image,
-        researcherId, 
+        researcherId,
       ]
     );
+
     if (result.affectedRows === 0) {
       return res.json({
         status: 'error',
         message: 'No changes made',
       });
     }
+
     res.json({
       status: 'ok',
-      message: 'Researcher update',
+      message: 'Researcher updat successfully',
       researcherId: researcherId,
       updatedData: updatedData,
     });
@@ -233,30 +239,30 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
 });
 
 
-//เพิ่ม อัพเดต แค่รูปนักวิจัย
-router.put('/image/:id', uploadProfile.single('image'), async (req, res) => {
+
+//ลบนักวิจัย
+router.delete('/:department/:id', async (req, res) => {
   const researcherId = req.params.id;
-  const image = req.file ? req.file.filename : null;
   try {
-    const [result] = await pool.execute(
-      `UPDATE researcher 
-       SET image = ? 
-       WHERE id = ?`,
-      [image, researcherId]
-    );
-    res.json({
-      status: 'ok',
-      message: 'Image update',
-      researcherId: researcherId, 
-      image: image,
-    });
+      const [researcher] = await pool.execute(
+        'SELECT image FROM researcher WHERE id = ?'
+        ,[researcherId]);
+      if (researcher.length === 0) {
+          return res.status(404).json({ status: 'error', message: 'Researcher not found' });
+      }
+
+      const imageUrl = researcher[0].image; 
+      if (imageUrl) {
+          await deleteS3(imageUrl);
+      }
+      await pool.execute('DELETE FROM researcher WHERE id = ?', [researcherId]);
+      res.json({ status: 'ok', message: 'Researcher delete successfully' });
   } catch (err) {
-    res.json({
-      status: 'error',
-      message: err.message,
-    });
+      console.error(err);
+      res.status(500).json({ status: 'error', message: err.message });
   }
 });
+
 
 
 //เพิ่มงานวิจัยของนักวิจัย id นั้นๆ
@@ -361,33 +367,6 @@ router.delete('/:department/:researcherId/:scopusId', async function (req, res, 
 });
 
 
-//ลบนักวิจัย
-router.delete('/:department/:id', async (req, res) => {
-  const researcherId = req.params.id;
-  try {
-    const [researcher] = await pool.execute('SELECT image FROM researcher WHERE id = ?', [researcherId]);
-    const imageFile = researcher[0].image; 
-    const imagePath = imageFile ? path.join(__dirname, '../public/profile', imageFile) : null;
-
-    // ลบไฟล์รูปภาพ ถ้ามีไฟล์อยู่ในเซิร์ฟเวอร์
-    if (imagePath && fs.existsSync(imagePath)) {
-      fs.unlink(imagePath, (err) => {
-        if (err) {
-          console.error('Error removing image file:', err);
-        } else {
-          console.log('Image file removed:', imageFile);
-        }
-      });
-    }
-
-    // ลบนักวิจัยออกจากฐานข้อมูล
-    await pool.execute('DELETE FROM researcher WHERE id = ?', [researcherId]);
-
-    res.json({ status: 'ok', message: 'Researcher and image delete success' });
-  } catch (err) {
-    res.json({ status: 'error', message: err.message });
-  }
-});
 
 
 

@@ -29,14 +29,7 @@ router.post('/new', uploadNews.fields([
   
         const [results] = await pool.execute(
             'INSERT INTO activity (topic, detail, image, files, link, admin) VALUES (?, ?, ?, ?, ?, ?)',
-            [
-                topic,
-                detail,
-                JSON.stringify(imageUrls),  
-                JSON.stringify(fileUrls),
-                link, 
-                admin,
-            ]
+            [topic, detail, JSON.stringify(imageUrls), JSON.stringify(fileUrls), link, admin,]
         );
         res.json({
             status: 'ok',
@@ -251,7 +244,6 @@ router.delete('/:id', async (req, res) => {
       await deleteS3(file);
     }
 
-    // ลบข้อมูลกิจกรรมจากฐานข้อมูลหลังจากลบไฟล์ทั้งหมดแล้ว
     const [results] = await pool.execute(
       'DELETE FROM activity WHERE id = ?',
       [req.params.id]

@@ -13,20 +13,39 @@ const s3 = new S3({
     region: process.env.AWS_REGION,
 });
 
-// ฟังก์ชันตรวจสอบประเภทไฟล์
-const getContentType = (file) => {
+// กำหนดขนาด
+const MAX_IMAGE_SIZE = 25 * 1024 * 1024; // 25MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
+
+// ฟังก์ชันตรวจสอบประเภทไฟล์และขนาด
+const validateFile = (file) => {
     const mimeType = file.mimetype;
+    const fileSize = file.size;
     const allowedImages = ["image/jpeg", "image/png", "image/webp"];
     const allowedFiles = [
         "application/pdf",
-         "application/msword",
-         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          "text/csv"];
-    
-    if (allowedImages.includes(mimeType)) return mimeType; 
-    if (allowedFiles.includes(mimeType)) return mimeType; 
-    throw new Error("Unsupported file type"); 
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "text/csv"
+    ];
+
+    if (allowedImages.includes(mimeType)) {
+        if (fileSize > MAX_IMAGE_SIZE) {
+            throw new Error("Image เกิน 25MB limit");
+        }
+        return mimeType;
+    }
+
+    if (allowedFiles.includes(mimeType)) {
+        if (fileSize > MAX_FILE_SIZE) {
+            throw new Error("Files เกิน 50MB limit");
+        }
+        return mimeType;
+    }
+    throw new Error("Unsupported file type");
 };
+
 
 // ตั้งค่า S3 Storage สำหรับการอัปโหลดข่าว
 const s3StorageNews = multerS3({
@@ -34,7 +53,7 @@ const s3StorageNews = multerS3({
     bucket: process.env.AWS_BUCKET_NAME,
     contentType: (req, file, cb) => {
         try {
-            const contentType = getContentType(file);
+            const contentType = validateFile(file); 
             cb(null, contentType);
         } catch (err) {
             cb(err, null);
@@ -49,13 +68,14 @@ const s3StorageNews = multerS3({
     },
 });
 
+
 // ตั้งค่า S3 Storage สำหรับการอัปโหลดโปรไฟล์
 const s3StorageProfile = multerS3({
     s3: s3,
     bucket: process.env.AWS_BUCKET_NAME,
     contentType: (req, file, cb) => {
         try {
-            const contentType = getContentType(file);
+            const contentType = validateFile(file); 
             cb(null, contentType);
         } catch (err) {
             cb(err, null);
@@ -69,6 +89,7 @@ const s3StorageProfile = multerS3({
         cb(null, fileName);
     },
 });
+
 
 // ฟังก์ชันสำหรับลบไฟล์ใน S3
 const deleteS3 = (fileUrl) => {
@@ -98,9 +119,11 @@ const deleteS3 = (fileUrl) => {
 
 const uploadNews = multer({
     storage: s3StorageNews,
+    limits: { fileSize: MAX_FILE_SIZE },
 });
 const uploadProfile = multer({
-    storage: s3StorageProfile,
+    storage: s3StorageProfile, 
+    limits: { fileSize: MAX_IMAGE_SIZE },
 });
 
 // ฟังก์ชันเพื่อดึงเวลาปัจจุบันในเขตเวลาของกรุงเทพฯ

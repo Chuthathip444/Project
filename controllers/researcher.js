@@ -14,9 +14,9 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 router.get('/', async (req, res) => {
   try {
     const [results] = await pool.execute(
-      `SELECT id AS id, name AS name, name_thai AS name_thai,
-       department AS department, faculty AS faculty, contact AS contact,
-       phone AS phone, office AS office, image AS image
+      `SELECT id AS id, position AS position, name AS name, position_thai AS position_thai,
+       name_thai AS name_thai,department AS department, faculty AS faculty,
+       contact AS contact, phone AS phone, office AS office, image AS image
        FROM researcher`
     );
 
@@ -72,8 +72,10 @@ router.get('/:department', async (req, res) => {
   try {
     const [results] = await pool.execute(
       `SELECT 
-        r.id AS id, 
-        r.name AS name, 
+        r.id AS id,
+        r.position AS position, 
+        r.name AS name,
+        r.position_thai AS position_thai, 
         r.name_thai AS name_thai,
         r.department AS department,
         r.faculty AS faculty,
@@ -113,7 +115,8 @@ router.get('/:department/:id', async (req, res) => {
   //const department = req.params.department; 
   try {
     const [results] = await pool.execute(
-      `SELECT r.id AS researcher_id, 
+      `SELECT r.id AS researcher_id,
+              r.position AS position 
               r.name AS researcher_name, 
               r.department AS department,
               s.id AS scopus_id, 
@@ -142,14 +145,14 @@ router.get('/:department/:id', async (req, res) => {
 
 //เพิ่มนักวิจัยคนใหม่
 router.post('/:department/new', uploadProfile.single('image'), async (req, res) => {
-  const { name, name_thai, department, faculty, contact, phone, office } = req.body;
+  const { position, name, position_thai, name_thai, department, faculty, contact, phone, office } = req.body;
   const image = req.file ? req.file.location : null;
     try {
       const [result] = await pool.execute(
-        `INSERT INTO researcher (name, name_thai
+        `INSERT INTO researcher (position, name, position_thai, name_thai
         , department, faculty, contact, phone, office, image) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [name, name_thai, department, faculty, contact, phone, office, image]
+        [position, name, position_thai, name_thai, department, faculty, contact, phone, office, image]
       );
       res.json({
         status: 'ok',
@@ -170,7 +173,7 @@ router.post('/:department/new', uploadProfile.single('image'), async (req, res) 
 router.put('/:department/:id/update', uploadProfile.single('image'), async (req, res) => {
   const department = req.params.department;
   const researcherId = req.params.id;
-  const { name, name_thai, faculty, contact, phone, office } = req.body;
+  const { position, name, position_thai, name_thai, faculty, contact, phone, office } = req.body;
   const image = req.file ? req.file.location : null;
   try {
     const [existingData] = await pool.execute(
@@ -190,7 +193,9 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
     }
 
     const updatedData = {
+      position: position|| currentData.position,
       name: name || currentData.name,
+      position_thai: position_thai|| currentData.position_thai,
       name_thai: name_thai || currentData.name_thai,
       department: department || currentData.department,
       faculty: faculty || currentData.faculty,
@@ -201,11 +206,14 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
     };
 
     const [result] = await pool.execute(
-      `UPDATE researcher SET name = ?, name_thai = ?, department = ?,
-       faculty = ?, contact = ?, phone = ?, office = ?, image = ?
+      `UPDATE researcher SET position = ?, name = ?, position_thai =? ,
+       name_thai = ?, department = ?, faculty = ?, contact = ?,
+       phone = ?, office = ?, image = ?
        WHERE id = ?`,
       [
+        updatedData.position,
         updatedData.name,
+        updatedData.position_thai,
         updatedData.name_thai,
         updatedData.department,
         updatedData.faculty,

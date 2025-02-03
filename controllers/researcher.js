@@ -116,7 +116,7 @@ router.get('/:department/:id', async (req, res) => {
   try {
     const [results] = await pool.execute(
       `SELECT r.id AS researcher_id,
-              r.position AS position 
+              r.position AS position,
               r.name AS researcher_name, 
               r.department AS department,
               s.id AS scopus_id, 

@@ -28,6 +28,7 @@ const ebookController = require('./controllers/ebook');
 const activityController = require('./controllers/activity');
 const researcherController = require('./controllers/researcher');
 const researchController = require('./controllers/research');
+const lineBroadcastController =require('./controllers/lineBroadcast');
 
 // API
 app.get('/', (req, res) => { res.redirect('/home'); });
@@ -37,6 +38,8 @@ app.use('/ebook', ebookController);
 app.use('/researcher', researcherController);
 app.use('/activity', activityController);
 app.use('/research', researchController);
+app.use('/broadcast', lineBroadcastController);
+
 
 //server
 const { createServer } = require('http');

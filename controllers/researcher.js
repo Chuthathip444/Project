@@ -109,10 +109,9 @@ router.get('/:department', async (req, res) => {
 });
 
 
-// แสดงข้อมูลนักวิจัยแต่ละคนด้วย id ว่ามีกี่วิจัย
+// แสดงข้อมูลนักวิจัยแต่ละคน
 router.get('/:department/:id', async (req, res) => {
   const researcherId = req.params.id;
-  //const department = req.params.department; 
   try {
     const [results] = await pool.execute(
       `SELECT r.id AS researcher_id,
@@ -275,7 +274,6 @@ router.delete('/:department/:id', async (req, res) => {
 
 //เพิ่มงานวิจัยของนักวิจัย id นั้นๆ
 router.post('/:department/:id/new', async (req, res) => {
-  //console.log(req.body);
   const { department, id } = req.params;  
   const { paper, year, source, cited, link_to_paper } = req.body;  
   try {

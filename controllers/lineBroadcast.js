@@ -6,9 +6,9 @@ require("dotenv").config();
 const fetch = require("node-fetch"); 
 
 
-// router.get("/line", (req, res) => {
-//   res.send("Line Broadcast");
-// });
+router.get("/line", (req, res) => {
+  res.send("Line Broadcast");
+});
 
 //API ส่งข้อความไปยัง LINE Broadcast
 router.post("/send", async (req, res) => {

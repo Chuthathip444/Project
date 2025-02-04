@@ -44,14 +44,14 @@ router.get('/', async (req, res) => {
 });
 
 
-//แสดงข้อมูลจากสองตาราง researcher และ scopus_2019_2023 ทั้งหมด
-router.get('/scopus', async (req, res) => {
+//แสดงข้อมูลจากสองตาราง researcher และ research ทั้งหมด
+router.get('/research', async (req, res) => {
   try {
     const [results] = await pool.execute(
       `SELECT r.id AS researcher_id, r.name AS researcher_name, 
-              s.id AS scopus_id, s.paper, s.year, s.source, s.cited, s.link_to_paper
+              s.id AS research_id, s.paper, s.year, s.source, s.cited, s.link_to_paper
        FROM researcher r
-       LEFT JOIN scopus s ON r.id = s.researcher_id`
+       LEFT JOIN research s ON r.id = s.researcher_id`
     );
     res.json({
       status: 'ok',
@@ -119,14 +119,14 @@ router.get('/:department/:id', async (req, res) => {
               r.position AS position,
               r.name AS researcher_name, 
               r.department AS department,
-              s.id AS scopus_id, 
+              s.id AS research_id, 
               s.paper, 
               s.year, 
               s.source, 
               s.cited, 
               s.link_to_paper
        FROM researcher r
-       LEFT JOIN scopus s ON r.id = s.researcher_id
+       LEFT JOIN research s ON r.id = s.researcher_id
        WHERE r.id = ? `, 
       [researcherId]
     );    
@@ -234,7 +234,7 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
 
     res.json({
       status: 'ok',
-      message: 'Researcher updat successfully',
+      message: 'Researcher update successfully',
       researcherId: researcherId,
       updatedData: updatedData,
     });
@@ -280,14 +280,14 @@ router.post('/:department/:id/new', async (req, res) => {
   const { paper, year, source, cited, link_to_paper } = req.body;  
   try {
     const [result] = await pool.execute(
-      `INSERT INTO scopus (researcher_id, paper, year, source, cited, link_to_paper) 
+      `INSERT INTO research (researcher_id, paper, year, source, cited, link_to_paper) 
        VALUES (?, ?, ?, ?, ?, ?)`, 
       [id, paper, year, source, cited, link_to_paper] 
     );
     res.json({
       status: 'ok',
-      message: 'Data add success',
-      scopusId: result.insertId, 
+      message: 'Data add successfully',
+      researchId: result.insertId, 
     });
   } catch (err) {
     res.json({
@@ -299,13 +299,13 @@ router.post('/:department/:id/new', async (req, res) => {
 
 
 //อัพเดต แก้ไข งานวิจัย
-router.put('/:department/:researcherId/:scopusId/edit', async (req, res) => {
-  const { department, researcherId, scopusId } = req.params; 
+router.put('/:department/:researcherId/:researchId/edit', async (req, res) => {
+  const { department, researcherId, researchId } = req.params; 
   const { paper, year, source, cited, link_to_paper } = req.body; 
   try {
     const [existingData] = await pool.execute(
-      `SELECT * FROM scopus WHERE id = ? AND researcher_id = ?`,
-      [scopusId, researcherId]
+      `SELECT * FROM research WHERE id = ? AND researcher_id = ?`,
+      [researchId, researcherId]
     );
     if (existingData.length === 0) {
       return res.json({
@@ -323,7 +323,7 @@ router.put('/:department/:researcherId/:scopusId/edit', async (req, res) => {
       link_to_paper: link_to_paper || currentData.link_to_paper,
     };
     const [result] = await pool.execute(
-      `UPDATE scopus 
+      `UPDATE research 
        SET paper = ?, year = ?, source = ?, cited = ?, link_to_paper = ?
        WHERE id = ? AND researcher_id = ?`,
       [
@@ -332,7 +332,7 @@ router.put('/:department/:researcherId/:scopusId/edit', async (req, res) => {
         updatedData.source,
         updatedData.cited,
         updatedData.link_to_paper,
-        scopusId,
+        researchId,
         researcherId,
       ]
     );
@@ -344,9 +344,9 @@ router.put('/:department/:researcherId/:scopusId/edit', async (req, res) => {
     }
     res.json({
       status: 'ok',
-      message: 'Research update',
+      message: 'Research update successfully',
       researcherId: researcherId,
-      scopusId: scopusId,
+      researchId: researchId,
       updatedData: updatedData, 
     });
   } catch (err) {
@@ -360,15 +360,15 @@ router.put('/:department/:researcherId/:scopusId/edit', async (req, res) => {
 
 
 //ลบงานวิจัย
-router.delete('/:department/:researcherId/:scopusId', async function (req, res, next) {
-  const { department, researcherId, scopusId } = req.params; 
+router.delete('/:department/:researcherId/:researchId', async function (req, res, next) {
+  const { department, researcherId, researchId } = req.params; 
   try {
-    // ลบข้อมูลงานวิจัยจากตาราง scopus ที่ตรงกับ researcherId และ scopusId
+    // ลบข้อมูลงานวิจัยจากตาราง research ที่ตรงกับ researcherId และ researchId
     const [results] = await pool.execute(
-      'DELETE FROM scopus WHERE id = ? AND researcher_id = ?',
-      [scopusId, researcherId]
+      'DELETE FROM research WHERE id = ? AND researcher_id = ?',
+      [researchd, researcherId]
     );
-      res.json({ status: 'ok', message: 'Research delete' });
+      res.json({ status: 'ok', message: 'Research delete successfully' });
   } catch (err) {
       res.json({ status: 'error', message: err.message });
   }

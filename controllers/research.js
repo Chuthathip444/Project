@@ -5,11 +5,11 @@ const pool = require('../config/db');
 require('dotenv').config();
 
 
-router.get('/scopus', async (req, res) => {
+router.get('/Totalpapers', async (req, res) => {
     try {
       const [results] = await pool.execute(
         `SELECT id, researcher_id, paper, year, source, cited, link_to_paper
-         FROM scopus`
+         FROM research`
       );
       res.json({
         status: 'ok',

@@ -2,7 +2,8 @@ var express = require('express');
 var cors = require('cors');
 const router = express.Router();
 const pool = require('../config/db');
-const { uploadNews,deleteS3 ,CurrentTime  } = require ('../Middleware/upload'); 
+const { uploadNews,deleteS3 ,CurrentTime  } = require ('../Middleware/upload');
+const verifyToken = require('../Middleware/verifyToken');  
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
@@ -12,9 +13,90 @@ const path = require('path');
 router.use('/public', express.static(path.join(__dirname, '..', 'public')));
 
 
+//ดูข้อมูลกิจกรรมทั้งหมด
+router.get('/', async (req, res) => {
+  try {
+    const [results] = await pool.execute(
+      `SELECT id, topic, detail, image, files, link, admin, time FROM activity`
+    );
+
+    if (results.length > 0) {
+      const data = results.map(result => {
+        let images = [];
+        let files = [];
+
+        try {
+          images = JSON.parse(result.image || '[]');
+        } catch (e) {
+          images = result.image ? result.image.split(',') : [];
+        }
+
+        try {
+          files = JSON.parse(result.files || '[]');
+        } catch (e) {
+          files = result.files ? result.files.split(',') : [];
+        }
+
+        // แปลงเป็น URL ของไฟล์ใน S3
+        const imageUrl = images.map(image => `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${image.trim()}`);
+        const filesUrl = files.map(file => `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${file.trim()}`);
+        return {...result,};
+      });
+      res.json({
+        status: 'ok',
+        data: data,
+      });
+    } else {
+      res.status(404).json({
+        status: 'error',
+        message: 'No data found',
+      });
+    }
+  } catch (err) {
+    res.json({
+      status: 'error',
+      message: err.message,
+    });
+  }
+});
+
+
+//ดูข้อมูลกิจกรรมหนึ่งโพส ตาม id
+router.get('/:id', async function (req, res, next) {
+  try {
+    const [results] = await pool.execute(
+      `SELECT id, topic, detail, image, files, link, admin, time
+       FROM activity
+       WHERE id = ?`,
+      [req.params.id]
+    );
+
+    if (results.length > 0) {
+      const result = results[0];
+      const images = JSON.parse(result.image || '[]');
+      const files = JSON.parse(result.files || '[]');
+
+      // แปลงเป็น URL ของไฟล์ใน S3
+      const imageUrl = images.map(image => `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${image}`);
+      const filesUrl = files.map(file => `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${file}`);
+
+      res.json({
+        status: 'ok',
+        data: {...result,
+        },
+      });
+    }
+  } catch (err) {
+    res.json({
+      status: 'error',
+      message: err.message,
+    });
+  }
+});
+
 
 //เพิ่มกิจกรรม ประกาศต่างๆ
-router.post('/new', uploadNews.fields([
+router.post('/new', verifyToken, uploadNews.fields([
   { name: 'image' },{ name: 'files' }, 
 ]), async (req, res) => {
     try {
@@ -44,90 +126,8 @@ router.post('/new', uploadNews.fields([
 });
 
 
-//ดูข้อมูลกิจกรรมทั้งหมด
-router.get('/', async (req, res) => {
-    try {
-      const [results] = await pool.execute(
-        `SELECT id, topic, detail, image, files, link, admin, time FROM activity`
-      );
-  
-      if (results.length > 0) {
-        const data = results.map(result => {
-          let images = [];
-          let files = [];
-  
-          try {
-            images = JSON.parse(result.image || '[]');
-          } catch (e) {
-            images = result.image ? result.image.split(',') : [];
-          }
-  
-          try {
-            files = JSON.parse(result.files || '[]');
-          } catch (e) {
-            files = result.files ? result.files.split(',') : [];
-          }
-  
-          // แปลงเป็น URL ของไฟล์ใน S3
-          const imageUrl = images.map(image => `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${image.trim()}`);
-          const filesUrl = files.map(file => `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${file.trim()}`);
-          return {...result,};
-        });
-        res.json({
-          status: 'ok',
-          data: data,
-        });
-      } else {
-        res.status(404).json({
-          status: 'error',
-          message: 'No data found',
-        });
-      }
-    } catch (err) {
-      res.json({
-        status: 'error',
-        message: err.message,
-      });
-    }
-});
-
-
-//ดูข้อมูลกิจกรรมหนึ่งโพส ตาม id
-router.get('/:id', async function (req, res, next) {
-    try {
-      const [results] = await pool.execute(
-        `SELECT id, topic, detail, image, files, link, admin, time
-         FROM activity
-         WHERE id = ?`,
-        [req.params.id]
-      );
-  
-      if (results.length > 0) {
-        const result = results[0];
-        const images = JSON.parse(result.image || '[]');
-        const files = JSON.parse(result.files || '[]');
-
-        // แปลงเป็น URL ของไฟล์ใน S3
-        const imageUrl = images.map(image => `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${image}`);
-        const filesUrl = files.map(file => `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${file}`);
-
-        res.json({
-          status: 'ok',
-          data: {...result,
-          },
-        });
-      }
-    } catch (err) {
-      res.json({
-        status: 'error',
-        message: err.message,
-      });
-    }
-});
-
-
 // แก้ไขข้อมูลข่าวกิจกรรม
-router.put('/:id/edit', uploadNews.fields([
+router.put('/:id/edit', verifyToken, uploadNews.fields([
   { name: 'image' },{ name: 'files' },
 ]), async (req, res) => {
   const activityId = req.params.id; 
@@ -212,9 +212,8 @@ router.put('/:id/edit', uploadNews.fields([
 });
 
 
-
 //ลบข้อมูลกิจกรรม id นั้น
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', verifyToken, async (req, res) => {
   try {
     const [activity] = await pool.execute(
       'SELECT * FROM activity WHERE id = ?',

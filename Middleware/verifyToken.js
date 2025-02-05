@@ -30,7 +30,7 @@ const verifyToken = async (req, res, next) => {
   } catch (err) {
     res.status(401).json({ 
         status: 'error', 
-        message: 'Invalid or expired token' });
+        message: 'Token ไม่ถูกต้องหรือหมดอายุ' });
   }
 };
 

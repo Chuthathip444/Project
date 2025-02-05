@@ -12,15 +12,12 @@ router.get('/', (req, res) => {
 // API: นับจำนวนผู้เข้าชม
 router.get('/track', async (req, res) => {
   const userIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-
   try {
-    // ตรวจสอบว่า IP มีอยู่ในตารางแล้วหรือไม่
     const checkQuery = 'SELECT COUNT(*) AS count FROM visitors WHERE ip_address = ?';
     const [results] = await pool.query(checkQuery, [userIP]);
 
     const isNewVisitor = results[0].count === 0;
     if (isNewVisitor) {
-      // บันทึก IP Address ลงในตาราง
       const insertQuery = 'INSERT INTO visitors (ip_address) VALUES (?)';
       await pool.query(insertQuery, [userIP]);
       res.json({ message: 'เพิ่มผู้เยี่ยมชมใหม่', ip: userIP });
@@ -37,9 +34,7 @@ router.get('/track', async (req, res) => {
 // API: ดูจำนวนผู้เข้าชมทั้งหมด
 router.get('/stats', async (req, res) => {
   const statsQuery = 'SELECT COUNT(*) AS Visitors FROM visitors';
-
   try {
-    // ใช้คำสั่ง query แบบ Promise
     const [results] = await pool.query(statsQuery);
     res.json({ Visitors: results[0].Visitors });
   } catch (err) {
@@ -62,7 +57,6 @@ router.get('/visitor', async (req, res) => {
       const insertQuery = 'INSERT INTO visitors (ip_address) VALUES (?)';
       await pool.query(insertQuery, [userIP]);
     }
-
     // นับจำนวนผู้เข้าชมทั้งหมด
     const statsQuery = 'SELECT COUNT(*) AS Visitors FROM visitors';
     const [stats] = await pool.query(statsQuery);
@@ -71,7 +65,6 @@ router.get('/visitor', async (req, res) => {
       ip: userIP,
       totalVisitors: stats[0].Visitors
     });
-
   } catch (err) {
     console.error('เกิดข้อผิดพลาด:', err);
     res.status(500).send('เกิดข้อผิดพลาด');

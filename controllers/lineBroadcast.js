@@ -18,13 +18,11 @@ router.post("/send", async (req, res) => {
       .status(400)
       .json({ error: "ต้องมีข้อความ รูปภาพ หรือลิงก์อย่างน้อยหนึ่งอย่าง" });
   }
-
   const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (!accessToken) {
     return res.status(500).json({ error: "ไม่พบ LINE Access Token" });
   }
 
-  //เตรียมข้อความที่ต้องการส่ง
   const messages = [];
   if (message) {
     messages.push({ type: "text", text: message });
@@ -56,9 +54,7 @@ router.post("/send", async (req, res) => {
         body: JSON.stringify({ messages }),
       }
     );
-
     const result = await response.json();
-
     if (!response.ok) {
       return res
         .status(500)

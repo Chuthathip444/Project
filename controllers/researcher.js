@@ -5,7 +5,7 @@ const pool = require('../config/db');
 require('dotenv').config();
 const app = express();
 const { uploadProfile, deleteS3 } = require('../Middleware/upload');
-const verifyToken = require('../Middleware/verifyToken');
+//const verifyToken = require('../Middleware/verifyToken');
 const path = require('path');
 const fs = require('fs');
 
@@ -135,8 +135,8 @@ router.get('/:department/:id', async (req, res) => {
 });
 
 
-//เพิ่มนักวิจัยคนใหม่
-router.post('/:department/new', verifyToken, uploadProfile.single('image'), async (req, res) => {
+//เพิ่มนักวิจัยคนใหม่ //, verifyToken
+router.post('/:department/new', uploadProfile.single('image'), async (req, res) => {
   const { position, name, position_thai, name_thai, department, faculty, contact, phone, office } = req.body;
   const image = req.file ? req.file.location : null;
     try {
@@ -160,8 +160,8 @@ router.post('/:department/new', verifyToken, uploadProfile.single('image'), asyn
 });
   
 
-//แก้ไขโปรไฟล์นักวิจัย
-router.put('/:department/:id/update', verifyToken, uploadProfile.single('image'), async (req, res) => {
+//แก้ไขโปรไฟล์นักวิจัย , verifyToken
+router.put('/:department/:id/update', uploadProfile.single('image'), async (req, res) => {
   const department = req.params.department;
   const researcherId = req.params.id;
   const { position, name, position_thai, name_thai, faculty, contact, phone, office } = req.body;
@@ -234,8 +234,8 @@ router.put('/:department/:id/update', verifyToken, uploadProfile.single('image')
 
 
 
-//ลบนักวิจัย
-router.delete('/:department/:id', verifyToken, async (req, res) => {
+//ลบนักวิจัย  , verifyToken
+router.delete('/:department/:id', async (req, res) => {
   const researcherId = req.params.id;
   try {
       const [researcher] = await pool.execute(

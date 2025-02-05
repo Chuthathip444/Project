@@ -33,7 +33,7 @@ const lineBroadcastController =require('./controllers/lineBroadcast');
 // API
 app.get('/', (req, res) => { res.redirect('/home'); });
 app.use('/home', homeController); 
-app.use('/login', loginController); 
+app.use('/admin', loginController); 
 app.use('/ebook', ebookController);
 app.use('/researcher', researcherController);
 app.use('/activity', activityController);

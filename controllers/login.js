@@ -1,97 +1,115 @@
-const express = require('express'); 
+const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
-const secret = 'login';
+const verifyToken = require('../Middleware/verifyToken');
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
-const saltRounds = 10; 
+const saltRounds = 10;
+const secret = 'login';
 
 
+// Register พร้อมสร้าง Token และเก็บในฐานข้อมูล
 router.post('/register', jsonParser, async function (req, res) {
   try {
+    const [userExists] = await pool.execute('SELECT * FROM admin WHERE email=?', [req.body.email]);
+    if (userExists.length > 0) {
+      return res.status(400).json({ 
+        status: 'error', 
+        message: 'Email ซ้ำ' });
+    }
     const hash = await bcrypt.hash(req.body.password, saltRounds);
-    const [results] = await pool.execute(
-      'INSERT INTO admin(email, password, fname, lname) VALUES (?, ?, ?, ?)',
-      [req.body.email, hash, req.body.fname, req.body.lname]
+    const token = jwt.sign({ email: req.body.email }, secret);
+    await pool.execute(
+      'INSERT INTO admin(email, password, fname, lname, token) VALUES (?, ?, ?, ?, ?)',
+      [req.body.email, hash, req.body.fname, req.body.lname, token]
     );
-    res.json({ status: 'ok' });
+    res.json({ status: 'ok', message: 'Admin register successfully', token });
   } catch (err) {
-    res.json({ status: 'error', message: err.message });
+    res.status(500).json({ status: 'error', message: err.message });
   }
 });
 
-// Login: สำหรับ admin
-router.post('/', jsonParser, async function (req, res) {
+
+// Login ใช้ Token เดิมที่สร้างไว้ตอน Register
+router.post('/login', jsonParser, async function (req, res) {
   try {
     const [user] = await pool.execute('SELECT * FROM admin WHERE email=?', [req.body.email]);
     if (user.length === 0) {
-      res.json({ status: 'error', message: 'no user found' });
-      return;
+      return res.status(401).json({ status: 'error', message: 'No user found' });
     }
 
     const isLogin = await bcrypt.compare(req.body.password, user[0].password);
-    if (isLogin) {
-      const token = jwt.sign({ email: user[0].email }, secret, );
-      res.json({ status: 'ok', message: 'login success', token });
-    } else {
-      res.json({ status: 'error', message: 'login failed' });
+    if (!isLogin) {
+      return res.status(401).json({ status: 'error', message: 'Login failed' });
     }
+
+    // ตรวจสอบว่า Token ไม่เป็น NULL หรือ ""
+    if (!user[0].token || user[0].token.trim() === "") {
+      return res.status(401).json({ 
+        status: 'error', 
+        message: 'ไม่มี token เป็น NULL หรือ "", please register again' });
+    }
+    res.json({ status: 'ok', message: 'Login success', token: user[0].token });
   } catch (err) {
-    res.json({ status: 'error', message: err.message });
+    res.status(500).json({ status: 'error', message: err.message });
   }
 });
 
-// Authentication: ตรวจสอบ token
-router.post('/authen', jsonParser, function (req, res) {
-  try {
-    const token = req.headers.authorization.split(' ')[1];
-    const decoded = jwt.verify(token, secret);
-    res.json({ status: 'ok', decoded });
-  } catch (err) {
-    res.json({ status: 'error', message: err.message });
-  }
+// ตรวจสอบ Token ก่อนเข้าถึง API อื่นๆ
+router.post('/authen', jsonParser, verifyToken, function (req, res) {
+  res.json({ status: 'ok', decoded: req.admin });
 });
 
-// Get All Admins: ดูข้อมูล admin ทั้งหมด
-router.get('/Alladmin', async function (req, res) {
+// ข้อมูลแอดมินทั้งหมด 
+router.get('/Alladmin', verifyToken, async function (req, res) {
   try {
     const [results] = await pool.execute('SELECT id, email, fname, lname FROM admin');
     res.json({ status: 'ok', AllAdmin: results });
   } catch (err) {
-    res.json({ status: 'error', message: err.message });
+    res.status(500).json({ status: 'error', message: err.message });
   }
 });
 
-// Read admin by ID
-router.get('/admin/:id', async function (req, res, next) {
+// ดึงข้อมูลแอดมินตาม ID 
+router.get('/:id', verifyToken, async function (req, res) {
   try {
-    const [results] = await pool.execute(
-      'SELECT * FROM admin WHERE id=?',
-      [req.params.id]
-    );
+    const [results] = await pool.execute('SELECT id, email, fname, lname FROM admin WHERE id=?', [req.params.id]);
     if (results.length === 0) {
-      res.json({ status: 'error', message: 'Admin not found' });
-      return;
+      return res.status(404).json({ status: 'error', message: 'Admin not found' });
     }
-    res.json({ status: 'ok', research: results[0] });
+    res.json({ status: 'ok', admin: results[0] });
   } catch (err) {
-    res.json({ status: 'error', message: err.message });
+    res.status(500).json({ status: 'error', message: err.message });
   }
 });
 
-// Delete Admin: ลบข้อมูล admin
-router.delete('/admin/:id', async function (req, res) {
+
+//ลบข้อมูล admin
+router.delete('/delete/:id', verifyToken, async function (req, res) {
   try {
-    await pool.execute(
-      'DELETE FROM admin WHERE id=?',
-      [req.params.id]
-    );
-    res.json({ status: 'ok', message: 'Admin deleted successfully' });
+    await pool.execute('DELETE FROM admin WHERE id=?', [req.params.id]);
+    res.json({ status: 'ok', message: 'Admin delete successfully' });
   } catch (err) {
-    res.json({ status: 'error', message: err.message });
+    res.status(500).json({ status: 'error', message: err.message });
   }
 });
+
+
+
+// router.delete('/delete/:id', async function (req, res) {
+//   try {
+//     await pool.execute(
+//       'DELETE FROM admin WHERE id=?',
+//       [req.params.id]
+//     );
+//     res.json({ status: 'ok', message: 'Admin delete successfully' });
+//   } catch (err) {
+//     res.json({ status: 'error', message: err.message });
+//   }
+// });
+
+
 
 module.exports = router;

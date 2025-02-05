@@ -5,6 +5,7 @@ const pool = require('../config/db');
 require('dotenv').config();
 const app = express();
 const { uploadProfile, deleteS3 } = require('../Middleware/upload');
+const verifyToken = require('../Middleware/verifyToken');
 const path = require('path');
 const fs = require('fs');
 
@@ -36,9 +37,7 @@ router.get('/', async (req, res) => {
     }
 
   } catch (err) {
-    res.json({
-      status: 'error',
-      message: err.message,
+    res.json({status: 'error',message: err.message,
     });
   }
 });
@@ -58,9 +57,7 @@ router.get('/research', async (req, res) => {
       data: results,
     });
   } catch (err) {
-    res.json({
-      status: 'error',
-      message: err.message,
+    res.json({status: 'error',message: err.message,
     });
   }
 });
@@ -101,9 +98,7 @@ router.get('/:department', async (req, res) => {
       });
     }
   } catch (err) {
-    res.json({
-      status: 'error',
-      message: err.message,
+    res.json({status: 'error',message: err.message,
     });
   }
 });
@@ -134,23 +129,20 @@ router.get('/:department/:id', async (req, res) => {
       data: results,
     });
   } catch (err) {
-    res.json({
-      status: 'error',
-      message: err.message,
+    res.json({status: 'error',message: err.message,
     });
   }
 });
 
 
 //เพิ่มนักวิจัยคนใหม่
-router.post('/:department/new', uploadProfile.single('image'), async (req, res) => {
+router.post('/:department/new', verifyToken, uploadProfile.single('image'), async (req, res) => {
   const { position, name, position_thai, name_thai, department, faculty, contact, phone, office } = req.body;
   const image = req.file ? req.file.location : null;
     try {
       const [result] = await pool.execute(
-        `INSERT INTO researcher (position, name, position_thai, name_thai
-        , department, faculty, contact, phone, office, image) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO researcher (position, name, position_thai, name_thai, department, faculty, contact, phone, office, image) 
+         VALUES (?,?,?, ?, ?, ?, ?, ?, ?, ?)`,
         [position, name, position_thai, name_thai, department, faculty, contact, phone, office, image]
       );
       res.json({
@@ -169,7 +161,7 @@ router.post('/:department/new', uploadProfile.single('image'), async (req, res) 
   
 
 //แก้ไขโปรไฟล์นักวิจัย
-router.put('/:department/:id/update', uploadProfile.single('image'), async (req, res) => {
+router.put('/:department/:id/update', verifyToken, uploadProfile.single('image'), async (req, res) => {
   const department = req.params.department;
   const researcherId = req.params.id;
   const { position, name, position_thai, name_thai, faculty, contact, phone, office } = req.body;
@@ -180,9 +172,7 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
       [researcherId]
     );
     if (existingData.length === 0) {
-      return res.json({
-        status: 'error',
-        message: 'Researcher not found',
+      return res.json({status: 'error',message: 'Researcher not found',
       });
     }
 
@@ -230,7 +220,6 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
         message: 'No changes made',
       });
     }
-
     res.json({
       status: 'ok',
       message: 'Researcher update successfully',
@@ -238,9 +227,7 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
       updatedData: updatedData,
     });
   } catch (err) {
-    res.json({
-      status: 'error',
-      message: err.message,
+    res.json({status: 'error',message: err.message,
     });
   }
 });
@@ -248,7 +235,7 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
 
 
 //ลบนักวิจัย
-router.delete('/:department/:id', async (req, res) => {
+router.delete('/:department/:id', verifyToken, async (req, res) => {
   const researcherId = req.params.id;
   try {
       const [researcher] = await pool.execute(

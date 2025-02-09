@@ -2,7 +2,7 @@ var express = require('express');
 var cors = require('cors');
 const router = express.Router();
 const pool = require('../config/db');
-const { uploadNews,deleteS3 ,CurrentTime  } = require ('../Middleware/upload');
+const { uploadNews ,deleteS3 ,CurrentTime ,uploadURL  } = require ('../Middleware/upload');
 //const verifyToken = require('../Middleware/verifyToken');  
 require('dotenv').config();
 const fs = require('fs');
@@ -95,8 +95,8 @@ router.get('/:id', async function (req, res, next) {
 });
 
 
-//เพิ่มกิจกรรม ประกาศต่างๆ
-router.post('/new', uploadNews.fields([ //,verifyToken
+// เพิ่มกิจกรรม ประกาศต่างๆ
+router.post('/new', uploadNews.fields([
   { name: 'image' },{ name: 'files' }, 
 ]), async (req, res) => {
     try {
@@ -124,7 +124,6 @@ router.post('/new', uploadNews.fields([ //,verifyToken
         res.status(500).json({ status: 'error', message: err.message });
     }
 });
-
 
 // แก้ไขข้อมูลข่าวกิจกรรม
 router.put('/:id/edit', uploadNews.fields([ //, verifyToken

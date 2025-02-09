@@ -1,4 +1,5 @@
-const { S3 } = require('@aws-sdk/client-s3');
+const { S3, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner'); 
 const multerS3 = require('multer-s3');
 const dotenv = require('dotenv');
 const multer = require('multer');
@@ -44,6 +45,30 @@ const validateFile = (file) => {
         return mimeType;
     }
     throw new Error("Unsupported file type");
+};
+
+//ฟังก์ชันสำหรับสร้าง Pre-signed URL
+const uploadURL = async (fileName, fileType, folder = "uploadNews") => {
+    try {
+        const fileKey = `${folder}/${Date.now()}_${fileName}`;
+        const params = {
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: fileKey,
+            ContentType: fileType,
+            //Expires: 60, // URL ใช้ได้ 60 วินาที
+            //ACL: "public-read",
+        };
+
+        const command = new PutObjectCommand(params);
+        const uploadUrl = await getSignedUrl(s3, command);
+        return {
+            uploadUrl,
+            fileUrl: `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`,
+        };
+    } catch (error) {
+        console.error("Error generating Pre-signed URL:", error);
+        throw new Error("Failed to generate Pre-signed URL");
+    }
 };
 
 
@@ -133,5 +158,6 @@ module.exports = {
     uploadNews,
     uploadProfile,
     deleteS3,
+    uploadURL,
     CurrentTime,
 };

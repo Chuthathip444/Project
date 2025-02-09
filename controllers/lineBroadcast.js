@@ -13,11 +13,11 @@ router.get("/line", (req, res) => {
 //API ส่งข้อความไปยัง LINE Broadcast
 router.post("/send", async (req, res) => {
   const { message, image, link } = req.body;
-  if (!message && !image && !link) {
-    return res
-      .status(400)
-      .json({ error: "ต้องมีข้อความ รูปภาพ หรือลิงก์อย่างน้อยหนึ่งอย่าง" });
-  }
+  // if (!message && !image && !link) {
+  //   return res
+  //     .status(400)
+  //     .json({ error: "ต้องมีข้อความ รูปภาพ หรือลิงก์อย่างน้อยหนึ่งอย่าง" });
+  // }
   const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (!accessToken) {
     return res.status(500).json({ error: "ไม่พบ LINE Access Token" });

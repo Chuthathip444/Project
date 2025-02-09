@@ -135,7 +135,7 @@ router.get('/:department/:id', async (req, res) => {
 });
 
 
-//เพิ่มนักวิจัยคนใหม่ //, verifyToken
+//เพิ่มนักวิจัยคนใหม่ //,verifyToken
 router.post('/:department/new', uploadProfile.single('image'), async (req, res) => {
   const { position, name, position_thai, name_thai, department, faculty, contact, phone, office } = req.body;
   const image = req.file ? req.file.location : null;
@@ -160,7 +160,7 @@ router.post('/:department/new', uploadProfile.single('image'), async (req, res) 
 });
   
 
-//แก้ไขโปรไฟล์นักวิจัย , verifyToken
+//แก้ไขโปรไฟล์นักวิจัย ,verifyToken
 router.put('/:department/:id/update', uploadProfile.single('image'), async (req, res) => {
   const department = req.params.department;
   const researcherId = req.params.id;
@@ -234,7 +234,7 @@ router.put('/:department/:id/update', uploadProfile.single('image'), async (req,
 
 
 
-//ลบนักวิจัย  , verifyToken
+//ลบนักวิจัย  ,verifyToken
 router.delete('/:department/:id', async (req, res) => {
   const researcherId = req.params.id;
   try {

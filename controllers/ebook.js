@@ -5,7 +5,8 @@ const moment = require('moment-timezone');
 const pool = require('../config/db');
 const { uploadEbook } = require('../Middleware/upload');
 require('dotenv').config();
-//const verifyToken = require('../Middleware/verifyToken'); 
+const verifyToken = require('../Middleware/verifyToken'); 
+
 
 //ดู link Ebook
 router.get('/', async (req, res) => {
@@ -20,7 +21,7 @@ router.get('/', async (req, res) => {
 
 
 // เพิ่มลิงก์ใหม่ ต้องมีการตรวจสอบ token
-router.post('/new', async (req, res) => { //, verifyToken
+router.post('/new',verifyToken ,async (req, res) => { 
   const { link_to_ebook } = req.body;
   if (!link_to_ebook) {
     return res.status(400).json({ error: 'Link is required' });
@@ -42,7 +43,7 @@ router.post('/new', async (req, res) => { //, verifyToken
 
 
 // แก้ไขลิงก์ต้องมีการตรวจสอบ token
-router.put('/edit/:id', async (req, res) => { //, verifyToken
+router.put('/edit/:id',verifyToken , async (req, res) => { 
   const { id } = req.params;
   const { link_to_ebook } = req.body;
   if (!link_to_ebook) {
@@ -70,7 +71,7 @@ router.put('/edit/:id', async (req, res) => { //, verifyToken
 
 
 // ลบลิงก์ตาม ID ต้องมีการตรวจสอบ token
-router.delete('/delete/:id', async (req, res) => { //, verifyToken
+router.delete('/delete/:id',verifyToken , async (req, res) => { 
   const { id } = req.params;
   try {
     const [result] = await pool.query('DELETE FROM ebook WHERE id = ?', [id]);

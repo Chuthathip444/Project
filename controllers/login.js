@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
-//const verifyToken = require('../Middleware/verifyToken');
+const verifyToken = require('../Middleware/verifyToken');
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 const saltRounds = 10;
@@ -11,7 +11,7 @@ const secret = 'login';
 
 
 // Register พร้อมสร้าง Token และเก็บในฐานข้อมูล
-router.post('/register', jsonParser, async function (req, res) {
+router.post('/register',verifyToken, jsonParser, async function (req, res) {
   try {
     const [userExists] = await pool.execute('SELECT * FROM admin WHERE email=?', [req.body.email]);
     if (userExists.length > 0) {
@@ -58,12 +58,12 @@ router.post('/login', async function (req, res) {
 });
 
 // ตรวจสอบ Token ก่อนเข้าถึง API อื่นๆ
-router.post('/authen', jsonParser, function (req, res) {
+router.post('/authen',verifyToken, jsonParser, function (req, res) {
   res.json({ status: 'ok', decoded: req.admin });
 });
 
 // ข้อมูลแอดมินทั้งหมด 
-router.get('/Alladmin', async function (req, res) {
+router.get('/Alladmin',verifyToken, async function (req, res) {
   try {
     const [results] = await pool.execute('SELECT id, email, fname, lname FROM admin');
     res.json({ status: 'ok', AllAdmin: results });
@@ -73,7 +73,7 @@ router.get('/Alladmin', async function (req, res) {
 });
 
 // ดึงข้อมูลแอดมินตาม ID 
-router.get('/:id', async function (req, res) {
+router.get('/:id',verifyToken, async function (req, res) {
   try {
     const [results] = await pool.execute('SELECT id, email, fname, lname FROM admin WHERE id=?', [req.params.id]);
     if (results.length === 0) {
@@ -87,7 +87,7 @@ router.get('/:id', async function (req, res) {
 
 
 //ลบข้อมูล admin
-router.delete('/delete/:id', async function (req, res) {
+router.delete('/delete/:id',verifyToken, async function (req, res) {
   try {
     await pool.execute('DELETE FROM admin WHERE id=?', [req.params.id]);
     res.json({ status: 'ok', message: 'Admin delete successfully' });

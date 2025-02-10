@@ -4,14 +4,14 @@ var cors = require("cors");
 const pool = require("../config/db");
 require("dotenv").config();
 const fetch = require("node-fetch"); 
-
+const verifyToken = require('../Middleware/verifyToken');
 
 router.get("/line", (req, res) => {
   res.send("Line Broadcast");
 });
 
 //API ส่งข้อความไปยัง LINE Broadcast
-router.post("/send", async (req, res) => {
+router.post("/send",verifyToken , async (req, res) => {
   const { message, image, link } = req.body;
   // if (!message && !image && !link) {
   //   return res

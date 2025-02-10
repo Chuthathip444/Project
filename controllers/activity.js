@@ -3,7 +3,7 @@ var cors = require('cors');
 const router = express.Router();
 const pool = require('../config/db');
 const { uploadNews ,deleteS3 ,CurrentTime ,uploadURL  } = require ('../Middleware/upload');
-//const verifyToken = require('../Middleware/verifyToken');  
+const verifyToken = require('../Middleware/verifyToken');  
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
@@ -96,7 +96,7 @@ router.get('/:id', async function (req, res, next) {
 
 
 // เพิ่มกิจกรรม ประกาศต่างๆ
-router.post('/new', uploadNews.fields([
+router.post('/new',verifyToken, uploadNews.fields([
   { name: 'image' },{ name: 'files' }, 
 ]), async (req, res) => {
     try {
@@ -126,7 +126,7 @@ router.post('/new', uploadNews.fields([
 });
 
 // แก้ไขข้อมูลข่าวกิจกรรม
-router.put('/:id/edit', uploadNews.fields([ //, verifyToken
+router.put('/:id/edit',verifyToken, uploadNews.fields([ //, verifyToken
   { name: 'image' },{ name: 'files' },
 ]), async (req, res) => {
   const activityId = req.params.id; 
@@ -212,7 +212,7 @@ router.put('/:id/edit', uploadNews.fields([ //, verifyToken
 
 
 //ลบข้อมูลกิจกรรม id นั้น
-router.delete('/:id', async (req, res) => { //, verifyToken
+router.delete('/:id',verifyToken, async (req, res) => { //, verifyToken
   try {
     const [activity] = await pool.execute(
       'SELECT * FROM activity WHERE id = ?',

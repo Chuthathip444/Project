@@ -60,7 +60,7 @@ router.get('/', async (req, res) => {
     });
     res.json({
       status: 'ok',
-      page: currentPage,
+      current_page: currentPage,
       total_pages: Math.ceil(total / limit),
       data: data,
     });

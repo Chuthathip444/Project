@@ -8,8 +8,8 @@ const { uploadProfile, deleteS3 } = require('../Middleware/upload');
 const verifyToken = require('../Middleware/verifyToken');
 const path = require('path');
 const fs = require('fs');
-
 app.use('/public', express.static(path.join(__dirname, 'public')));
+
 
 //แสดงข้อมูลตาราง researcher
 router.get('/', async (req, res) => {
@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
     if (results.length > 0) {
       const ImageUrl = results.map(result => ({
         ...result,
-      })); //imageUrl: `/public/profile/${result.image}` // เพิ่ม imageUrl 
+      })); 
       res.json({
         status: 'ok',
         data: ImageUrl, 
@@ -260,7 +260,7 @@ router.delete('/:department/:id',verifyToken, async (req, res) => {
 
 
 //เพิ่มงานวิจัยของนักวิจัย id นั้นๆ
-router.post('/:department/:id/new', async (req, res) => {
+router.post('/:department/:id/new',verifyToken, async (req, res) => {
   const { department, id } = req.params;  
   const { paper, year, source, cited, link_to_paper } = req.body;  
   try {
@@ -284,7 +284,7 @@ router.post('/:department/:id/new', async (req, res) => {
 
 
 //อัพเดต แก้ไข งานวิจัย
-router.put('/:department/:researcherId/:researchId/edit', async (req, res) => {
+router.put('/:department/:researcherId/:researchId/edit',verifyToken, async (req, res) => {
   const { department, researcherId, researchId } = req.params; 
   const { paper, year, source, cited, link_to_paper } = req.body; 
   try {
@@ -324,7 +324,7 @@ router.put('/:department/:researcherId/:researchId/edit', async (req, res) => {
     if (result.affectedRows === 0) {
       return res.json({
         status: 'error',
-        message: 'No changes made',
+        message: 'No changes',
       });
     }
     res.json({
@@ -345,15 +345,16 @@ router.put('/:department/:researcherId/:researchId/edit', async (req, res) => {
 
 
 //ลบงานวิจัย
-router.delete('/:department/:researcherId/:researchId', async function (req, res, next) {
+router.delete('/:department/:researcherId/:researchId',verifyToken, async function (req, res, next) {
   const { department, researcherId, researchId } = req.params; 
   try {
-    // ลบข้อมูลงานวิจัยจากตาราง research ที่ตรงกับ researcherId และ researchId
     const [results] = await pool.execute(
       'DELETE FROM research WHERE id = ? AND researcher_id = ?',
       [researchd, researcherId]
     );
-      res.json({ status: 'ok', message: 'Research delete successfully' });
+      res.json({ 
+        status: 'ok', 
+        message: 'Research delete successfully' });
   } catch (err) {
       res.json({ status: 'error', message: err.message });
   }

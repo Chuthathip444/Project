@@ -16,42 +16,55 @@ router.use('/public', express.static(path.join(__dirname, '..', 'public')));
 //ดูข้อมูลกิจกรรมทั้งหมด
 router.get('/', async (req, res) => {
   try {
+    const currentPage = parseInt(req.query.current_page) || 1;
+    const limit = 10;
+    const offset = (currentPage - 1) * limit;
     const [results] = await pool.execute(
-      `SELECT id, topic, detail, image, files, link, admin, time FROM activity`
+      `SELECT id, topic, detail, image, files, link, admin, time 
+       FROM activity
+       LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}`
     );
+    
+    // นับจำนวนข้อมูลทั้งหมดเพื่อคำนวณจำนวนหน้า
+    const [[{ total }]] = await pool.execute(
+      `SELECT COUNT(*) AS total FROM activity`
+    );
+    const data = results.map(result => {
+      let images = [];
+      let files = [];
 
-    if (results.length > 0) {
-      const data = results.map(result => {
-        let images = [];
-        let files = [];
+      try {
+        images = JSON.parse(result.image || '[]');
+      } catch (e) {
+        images = result.image ? result.image.split(',') : [];
+      }
 
-        try {
-          images = JSON.parse(result.image || '[]');
-        } catch (e) {
-          images = result.image ? result.image.split(',') : [];
-        }
+      try {
+        files = JSON.parse(result.files || '[]');
+      } catch (e) {
+        files = result.files ? result.files.split(',') : [];
+      }
 
-        try {
-          files = JSON.parse(result.files || '[]');
-        } catch (e) {
-          files = result.files ? result.files.split(',') : [];
-        }
+      const imageUrl = images.map(image => 
+        `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${image.trim()}`
+      );
+      const filesUrl = files.map(file => 
+        `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${file.trim()}`
+      );
 
-        // แปลงเป็น URL ของไฟล์ใน S3
-        const imageUrl = images.map(image => `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${image.trim()}`);
-        const filesUrl = files.map(file => `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${file.trim()}`);
-        return {...result,};
-      });
-      res.json({
-        status: 'ok',
-        data: data,
-      });
-    } else {
-      res.status(404).json({
-        status: 'error',
-        message: 'No data found',
-      });
-    }
+      return {
+        ...result,
+        imageUrl,
+        filesUrl,
+      };
+    });
+    res.json({
+      status: 'ok',
+      current_page: currentPage,
+      total_pages: Math.ceil(total / limit),
+      data: data,
+    });
+
   } catch (err) {
     res.json({
       status: 'error',
@@ -61,7 +74,7 @@ router.get('/', async (req, res) => {
 });
 
 
-//ดูข้อมูลกิจกรรมหนึ่งโพส ตาม id
+//ดูข้อมูลกิจกรรมโพส ตาม id
 router.get('/:id', async function (req, res, next) {
   try {
     const [results] = await pool.execute(

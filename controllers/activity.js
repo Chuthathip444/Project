@@ -16,7 +16,7 @@ router.use('/public', express.static(path.join(__dirname, '..', 'public')));
 //ดูข้อมูลกิจกรรมทั้งหมด
 router.get('/', async (req, res) => {
   try {
-    const currentPage = parseInt(req.query.current_page) || 1;
+    const currentPage = parseInt(req.query.page) || 1;
     const limit = 10;
     const offset = (currentPage - 1) * limit;
     const [results] = await pool.execute(
@@ -60,7 +60,7 @@ router.get('/', async (req, res) => {
     });
     res.json({
       status: 'ok',
-      current_page: currentPage,
+      page: currentPage,
       total_pages: Math.ceil(total / limit),
       data: data,
     });

@@ -345,20 +345,29 @@ router.put('/:department/:researcherId/:researchId/edit',verifyToken, async (req
 
 
 //ลบงานวิจัย
-router.delete('/:department/:researcherId/:researchId', async function (req, res, next) {
+router.delete('/:department/:researcherId/:researchId',verifyToken, async function (req, res) {
   const { department, researcherId, researchId } = req.params; 
   try {
     const [results] = await pool.execute(
       'DELETE FROM research WHERE id = ? AND researcher_id = ?',
-      [researchd, researcherId]
+      [researchId, researcherId]
     );
-      res.json({ 
-        status: 'ok', 
-        message: 'Research delete successfully' });
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ 
+        status: 'error', 
+        message: 'Research not found' });
+    }
+
+    res.json({ 
+      status: 'ok', 
+      message: 'Research deleted successfully' 
+    });
   } catch (err) {
-      res.json({ status: 'error', message: err.message });
+    res.status(500).json({ status: 'error', message: err.message });
   }
 });
+
 
 
 

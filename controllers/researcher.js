@@ -345,7 +345,7 @@ router.put('/:department/:researcherId/:researchId/edit',verifyToken, async (req
 
 
 //ลบงานวิจัย
-router.delete('/:department/:researcherId/:researchId',verifyToken, async function (req, res, next) {
+router.delete('/:department/:researcherId/:researchId', async function (req, res, next) {
   const { department, researcherId, researchId } = req.params; 
   try {
     const [results] = await pool.execute(

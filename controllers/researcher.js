@@ -283,30 +283,29 @@ router.post('/:department/:id/new',verifyToken, async (req, res) => {
 });
 
 
-//อัพเดต แก้ไข งานวิจัย
-router.put('/:department/:researcherId/:researchId/edit',verifyToken, async (req, res) => {
-  const { department, researcherId, researchId } = req.params; 
-  const { paper, year, source, cited, link_to_paper } = req.body; 
+// อัพเดต แก้ไข งานวิจัย
+router.put('/:department/:researcherId/:researchId/edit', verifyToken, async (req, res) => {
+  const { department, researcherId, researchId } = req.params;
+  const { paper, year, source, cited, link_to_paper } = req.body;
   try {
     const [existingData] = await pool.execute(
       `SELECT * FROM research WHERE id = ? AND researcher_id = ?`,
       [researchId, researcherId]
     );
+
     if (existingData.length === 0) {
-      return res.json({
-        status: 'error',
-        message: 'Research data not found',
-      });
+      return res.status(404).json({ status: 'error', message: 'Research data not found' });
     }
 
-    const currentData = existingData[0]; 
+    const currentData = existingData[0];
     const updatedData = {
       paper: paper || currentData.paper,
-      year: year || currentData.year,
+      year: year ? parseInt(year) : currentData.year,
       source: source || currentData.source,
-      cited: (cited !== undefined) ? cited : currentData.cited, 
+      cited: cited !== undefined ? parseInt(cited) : currentData.cited,
       link_to_paper: link_to_paper || currentData.link_to_paper,
     };
+
     const [result] = await pool.execute(
       `UPDATE research 
        SET paper = ?, year = ?, source = ?, cited = ?, link_to_paper = ?
@@ -321,32 +320,25 @@ router.put('/:department/:researcherId/:researchId/edit',verifyToken, async (req
         researcherId,
       ]
     );
+
     if (result.affectedRows === 0) {
-      return res.json({
-        status: 'error',
-        message: 'No changes',
-      });
+      return res.status(400).json({ status: 'error', message: 'No changes made' });
     }
+
     res.json({
       status: 'ok',
-      message: 'Research update successfully',
-      researcherId: researcherId,
-      researchId: researchId,
-      updatedData: updatedData, 
+      message: 'Research updated successfully',
+      updatedData,
     });
   } catch (err) {
-    res.json({
-      status: 'error',
-      message: err.message,
-    });
+    res.status(500).json({ status: 'error', message: err.message });
   }
 });
 
 
-
-//ลบงานวิจัย
-router.delete('/:department/:researcherId/:researchId',verifyToken, async function (req, res) {
-  const { department, researcherId, researchId } = req.params; 
+// ลบงานวิจัย
+router.delete('/:department/:researcherId/:researchId', verifyToken, async function (req, res) {
+  const { department, researcherId, researchId } = req.params;
   try {
     const [results] = await pool.execute(
       'DELETE FROM research WHERE id = ? AND researcher_id = ?',
@@ -356,7 +348,8 @@ router.delete('/:department/:researcherId/:researchId',verifyToken, async functi
     if (results.affectedRows === 0) {
       return res.status(404).json({ 
         status: 'error', 
-        message: 'Research not found' });
+        message: 'Research not found' 
+      });
     }
 
     res.json({ 
@@ -367,6 +360,7 @@ router.delete('/:department/:researcherId/:researchId',verifyToken, async functi
     res.status(500).json({ status: 'error', message: err.message });
   }
 });
+
 
 
 

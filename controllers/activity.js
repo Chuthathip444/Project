@@ -13,7 +13,23 @@ const path = require('path');
 router.use('/public', express.static(path.join(__dirname, '..', 'public')));
 
 
-//ดูข้อมูลกิจกรรมทั้งหมด
+// นับจำนวนกิจกรรมทั้งหมด
+router.get('/count', async (req, res) => {
+  try {
+    const [[{ total }]] = await pool.execute(
+      `SELECT COUNT(*) AS total FROM activity`
+    );
+    res.json({status: 'ok',total_activity: total,
+    });
+
+  } catch (err) {
+    res.json({status: 'error',message: err.message,
+    });
+  }
+});
+
+
+//ดูข้อมูลกิจกรรมแบ่งหน้า หน้าละ10 LIFO
 router.get('/', async (req, res) => {
   try {
     const currentPage = parseInt(req.query.page) || 1;

@@ -22,6 +22,7 @@ router.get('/', async (req, res) => {
     const [results] = await pool.execute(
       `SELECT id, topic, detail, image, files, link, admin, time 
        FROM activity
+       ORDER BY time DESC
        LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}`
     );
     

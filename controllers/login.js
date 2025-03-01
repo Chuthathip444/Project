@@ -54,8 +54,10 @@ router.post('/login', async function (req, res) {
     res.json({ 
       status: 'ok', 
       message: 'Login success', 
-      token: user[0].token ,
-      admin: {fname: user[0].fname ,lname: user[0].lname} });
+      token: user[0].token,
+      fname: user[0].fname,
+      lname: user[0].lname });
+      //admin: {fname: user[0].fname ,lname: user[0].lname}
   } catch (err) {
     res.status(500).json({ status: 'error', message: err.message });
   }

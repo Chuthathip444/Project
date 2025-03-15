@@ -4,9 +4,9 @@ var cors = require('cors');
 const pool = require('../config/db');
 require('dotenv').config();
 
-// router.get('/', (req, res) => {
-//   res.send('Web Application for Research');
-// });
+router.get('/', (req, res) => {
+  res.send('Web Application for ResearchEN');
+});
 
 // API: นับจำนวนผู้เข้าชม
 router.get('/track', async (req, res) => {
@@ -64,6 +64,24 @@ router.get('/visitor', async (req, res) => {
       ip: userIP,
       totalVisitors: stats[0].Visitors
     });
+  } catch (err) {
+    console.error('เกิดข้อผิดพลาด:', err);
+    res.status(500).send('เกิดข้อผิดพลาด');
+  }
+});
+
+
+router.delete('/track/:ip', async (req, res) => {
+  const { ip } = req.params;
+  try {
+    const deleteQuery = 'DELETE FROM visitors WHERE ip_address = ?';
+    const [result] = await pool.query(deleteQuery, [ip]);
+
+    if (result.affectedRows > 0) {
+      res.json({ message: 'ลบ IP สำเร็จ', ip: ip });
+    } else {
+      res.status(404).json({ message: 'ไม่พบ IP ในระบบ', ip: ip });
+    }
   } catch (err) {
     console.error('เกิดข้อผิดพลาด:', err);
     res.status(500).send('เกิดข้อผิดพลาด');

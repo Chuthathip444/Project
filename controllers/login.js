@@ -9,7 +9,6 @@ const jsonParser = bodyParser.json();
 const saltRounds = 10;
 const secret = 'login';
 
-
 // Register พร้อมสร้าง Token และเก็บในฐานข้อมูล
 router.post('/register',verifyToken, jsonParser, async function (req, res) {
   try {
@@ -101,6 +100,7 @@ router.delete('/delete/:id',verifyToken, async function (req, res) {
     res.status(500).json({ status: 'error', message: err.message });
   }
 });
+
 
 
 

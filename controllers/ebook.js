@@ -1,7 +1,6 @@
 var express = require('express');
 const router = express.Router();
 var cors = require('cors');
-const moment = require('moment-timezone');
 const pool = require('../config/db');
 const { uploadEbook } = require('../Middleware/upload');
 require('dotenv').config();

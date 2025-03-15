@@ -29,6 +29,7 @@ const activityController = require('./controllers/activity');
 const researcherController = require('./controllers/researcher');
 const researchController = require('./controllers/research');
 const lineBroadcastController =require('./controllers/lineBroadcast');
+const repasswordController =require('./controllers/repassword');
 
 // API
 app.get('/', (req, res) => { res.redirect('/home'); });
@@ -39,7 +40,7 @@ app.use('/researcher', researcherController);
 app.use('/activity', activityController);
 app.use('/research', researchController);
 app.use('/broadcast', lineBroadcastController);
-
+app.use('/reset', repasswordController); 
 
 //server
 const { createServer } = require('http');

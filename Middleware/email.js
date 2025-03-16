@@ -1,7 +1,7 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-const sendResetEmail = async (email, token) => {
+const sendResetEmail = async (email, reset_token) => {
     const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
@@ -10,7 +10,7 @@ const sendResetEmail = async (email, token) => {
         },
     });
 
-    const resetLink = `${process.env.BASE_URL}/reset-password?token=${token}`;
+    const resetLink = `${process.env.BASE_URL}/?token=${reset_token}`;
 
     await transporter.sendMail({
         from: `"Support" <${process.env.EMAIL_USER}>`,
@@ -21,4 +21,4 @@ const sendResetEmail = async (email, token) => {
     });
 };
 
-module.exports = sendResetEmail; 
+module.exports = sendResetEmail;
